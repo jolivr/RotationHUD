@@ -1,0 +1,19 @@
+## Interface: 100002
+## Version: 1.0.0
+## Title: Rotation HUD
+## Notes: Create rotations that use your keyboard layouts on-screen 
+## Author: JG Oliver
+## SavedVariables: RotationHUD_DB
+
+embeds.xml
+
+Core.lua
+Monk.lua
+
+
+
+
+
+
+
+
