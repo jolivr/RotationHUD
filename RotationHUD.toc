@@ -7,9 +7,11 @@
 
 embeds.xml
 
-Core.lua
+Layouts.lua
 Monk.lua
-
+ButtonMappings.lua
+Core.lua
+Rotation.lua
 
 
 

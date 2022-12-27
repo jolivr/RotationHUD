@@ -1,6 +1,6 @@
 local RotationHUD, Abilities = ...
 
-Monk = {
+Abilities.Monk = {
     Windwalker = {
         BlackoutKick = { spellId = 100784 },
         ChiBurst = { spellId = 123986, talentID = 101527 },
@@ -52,9 +52,9 @@ Monk = {
     }
 }
 
-Monk.AbilityNameLookup = {}
-Monk.AbilityLookup = {}
-for name, ability in pairs(Monk.Windwalker) do
-    Monk.AbilityNameLookup[ability.spellId] = name
-    Monk.AbilityLookup[ability.spellId] = ability
+Abilities.Monk.AbilityNameLookup = {}
+Abilities.Monk.AbilityLookup = {}
+for name, ability in pairs(Abilities.Monk.Windwalker) do
+    Abilities.Monk.AbilityNameLookup[ability.spellId] = name
+    Abilities.Monk.AbilityLookup[ability.spellId] = ability
 end

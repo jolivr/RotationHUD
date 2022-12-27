@@ -1,13 +1,16 @@
 local RotationHUD, Abilities = ...
+local RotationHUD, Rotation = ...
+local RotationHUD, Layouts = ...
 
-RoHUD = LibStub('AceAddon-3.0'):NewAddon('RoHUD', 'AceConsole-3.0', 'AceEvent-3.0');
-
+RoHUD = LibStub('AceAddon-3.0'):NewAddon('RoHUD', 'AceConsole-3.0', 'AceEvent-3.0', 'AceTimer-3.0');
 
 local GUI = LibStub("AceGUI-3.0")
 local ConfigDialog = LibStub("AceConfigDialog-3.0")
 local ConfigDB = LibStub("AceDB-3.0")
 local ConfigRegistry = LibStub("AceConfigRegistry-3.0")
+RoHUD.selectedLayout = Layouts.G13
 local spellListFrame, specIconList = {}, {}
+local healthBarFrame={}
 RoHUD.masterPriorityList = {}
 RoHUD.damageArgs = {}
 RoHUD.defenseArgs = {}
@@ -79,7 +82,6 @@ function RoHUD:OnInitialize()
     ConfigRegistry:RegisterOptionsTable("RoHUD", self.configOptions)
 
     self:InitializeConfigOptions()
-
     self:Print("Rotation HUD Initialized")
 end
 
@@ -91,14 +93,14 @@ function RoHUD:InitializeConfigOptions()
 end
 
 function RoHUD:CreatePrioritySection(abilityType, optionArgs, priorityList)
-   
+
     for i, _ in pairs(optionArgs) do
         optionArgs[i] = nil
     end
 
     for index, priority in pairs(priorityList) do
         local upDisabled, downDisabled = false, false
-        
+
         if (index == 1) then
             upDisabled = true
         end
@@ -113,7 +115,7 @@ function RoHUD:CreatePrioritySection(abilityType, optionArgs, priorityList)
             width = .7,
             args = {
                 icon = {
-                    name = Monk.AbilityNameLookup[priority.spellId],
+                    name = Abilities.Monk.AbilityNameLookup[priority.spellId],
                     type = "execute",
                     image = GetSpellTexture(priority.spellId),
                     imageHeight = 40,
@@ -226,7 +228,7 @@ function RoHUD:PopulateSpells(type, args, priorityList)
                 if not IsPassiveSpell(n, "spell") then
                     local spellName, _, spellIcon, _, _, _, spellId = GetSpellInfo(n, "spell")
                     if spellName ~= nil and self.masterPriorityList[spellId] == nil then
-                        spellList[index] = {name = spellName, icon = spellIcon, id = spellId}
+                        spellList[index] = { name = spellName, icon = spellIcon, id = spellId }
                         index = index + 1
                     end
                 end
@@ -235,7 +237,7 @@ function RoHUD:PopulateSpells(type, args, priorityList)
     end
 
 
-    table.sort(spellList, function(a,b) return a.name < b.name end)
+    table.sort(spellList, function(a, b) return a.name < b.name end)
 
     for _, spell in pairs(spellList) do
         local addIcon = GUI:Create("Icon")
@@ -254,7 +256,7 @@ function RoHUD:AddPriority(spellId, type, args, priorityList)
     if not spellId then return end
     local newIndex = #priorityList + 1
 
-    priorityList[newIndex] = Monk.AbilityLookup[spellId]
+    priorityList[newIndex] = Abilities.Monk.AbilityLookup[spellId]
 
     ConfigRegistry:NotifyChange("RoHUD"); -- necessary for options to refresh
     self:CreatePrioritySection(type, args, priorityList)
@@ -289,9 +291,40 @@ function RoHUD:changeAbilityPriority(spellId, currentIndex, newIndex, type, args
     self:CreatePrioritySection(type, args, priorityList)
 end
 
+function RoHUD:PriorityRotationTimer()
+	-- for type, pack in pairs(abilityPacks) do
+	-- 	checkAbilities(pack.abilityPool, prevDmgButton, GI.DamageFrames, pack.glowColor, type)
+	-- end
+end
+
+function RoHUD:StartTimers()
+    self:Print("Starting timers")
+    self:ScheduleRepeatingTimer("PriorityRotationTimer", .25)
+end
+
+function RoHUD:CancelTimers()
+	self:Print("Stopping timers")
+	self:CancelAllTimers()
+end
+
 function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
+    healthBarFrame = _G["ElvNP_Player"]
+    Rotation:InitializeIconGrid(self.selectedLayout, healthBarFrame)
     ConfigDialog:Open("RoHUD")
     ConfigDialog:SelectGroup("RoHUD", "priorities", "damage")
 end
 
+function RoHUD:PLAYER_TARGET_CHANGED()
+	if (UnitCanAttack("player", "target")) then
+		self:StartTimers()
+		Rotation:ShowGrid(healthBarFrame)
+	else
+		self:CancelTimers()
+		Rotation:HideGrid(healthBarFrame)
+	end
+end
+
 RoHUD:RegisterEvent("PLAYER_ENTERING_WORLD")
+RoHUD:RegisterEvent("PLAYER_TARGET_CHANGED")
+
+--= _G["ElvNP_Player"]
