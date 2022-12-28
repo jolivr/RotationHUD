@@ -8,14 +8,16 @@ local GUI = LibStub("AceGUI-3.0")
 local ConfigDialog = LibStub("AceConfigDialog-3.0")
 local ConfigDB = LibStub("AceDB-3.0")
 local ConfigRegistry = LibStub("AceConfigRegistry-3.0")
-RoHUD.selectedLayout = Layouts.G13
 local spellListFrame, specIconList = {}, {}
-local healthBarFrame={}
+local healthBarFrame = {}
+RoHUD.selectedLayout = Layouts.G13
 RoHUD.masterPriorityList = {}
 RoHUD.damageArgs = {}
 RoHUD.defenseArgs = {}
 RoHUD.cooldownArgs = {}
 RoHUD.healingArgs = {}
+
+
 
 RoHUD.defaultOptions = {
     profile = {
@@ -292,9 +294,16 @@ function RoHUD:changeAbilityPriority(spellId, currentIndex, newIndex, type, args
 end
 
 function RoHUD:PriorityRotationTimer()
-	-- for type, pack in pairs(abilityPacks) do
-	-- 	checkAbilities(pack.abilityPool, prevDmgButton, GI.DamageFrames, pack.glowColor, type)
-	-- end
+    -- for type, pack in pairs(abilityPacks) do
+    Rotation.PrevDamageButton = Rotation:CheckAbilities(self.db.profile.damagePriorities, Rotation.PrevDamageButton,
+        Rotation.DamageFrames, Rotation.Colors.Default, type)
+    Rotation.PrevDefenseButton = Rotation:CheckAbilities(self.db.profile.defensePriorities, Rotation.PrevDefenseButton,
+        Rotation.DefenseFrames, Rotation.Colors.Red, type)
+    Rotation.PrevCooldownButton = Rotation:CheckAbilities(self.db.profile.cooldownPriorities, Rotation.PrevCooldownButton
+        , Rotation.CooldownFrames, Rotation.Colors.Blue, type)
+    Rotation.PrevHealingButton = Rotation:CheckAbilities(self.db.profile.healingPriorities, Rotation.PrevHealingButton,
+        Rotation.HealingFrames, Rotation.Colors.Green, type)
+    -- end
 end
 
 function RoHUD:StartTimers()
@@ -303,28 +312,63 @@ function RoHUD:StartTimers()
 end
 
 function RoHUD:CancelTimers()
-	self:Print("Stopping timers")
-	self:CancelAllTimers()
+    self:Print("Stopping timers")
+    self:CancelAllTimers()
 end
 
 function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
     healthBarFrame = _G["ElvNP_Player"]
     Rotation:InitializeIconGrid(self.selectedLayout, healthBarFrame)
+
+    Rotation.DamageFrames = Rotation:LoadFrameList(self.db.profile.damagePriorities)
+    Rotation.DefenseFrames = Rotation:LoadFrameList(self.db.profile.defensePriorities)
+    Rotation.CooldownFrames = Rotation:LoadFrameList(self.db.profile.cooldownPriorities)
+    Rotation.HealingFrames = Rotation:LoadFrameList(self.db.profile.healingPriorities)
+    Rotation.InterruptAbility = Abilities.Monk.Windwalker.SpearHandStrike
+
     ConfigDialog:Open("RoHUD")
     ConfigDialog:SelectGroup("RoHUD", "priorities", "damage")
 end
 
 function RoHUD:PLAYER_TARGET_CHANGED()
-	if (UnitCanAttack("player", "target")) then
-		self:StartTimers()
-		Rotation:ShowGrid(healthBarFrame)
-	else
-		self:CancelTimers()
-		Rotation:HideGrid(healthBarFrame)
-	end
+    if (UnitCanAttack("player", "target")) then
+        self:StartTimers()
+        Rotation:ShowGrid(healthBarFrame)
+    else
+        self:CancelTimers()
+        Rotation:HideGrid(healthBarFrame)
+    end
+end
+
+function RoHUD:UNIT_SPELLCAST_START(_, unitTarget, _, _)
+    if (unitTarget == "target") then
+        Rotation:CheckInterrupt()
+    end
+end
+
+function RoHUD:UNIT_SPELLCAST_CHANNEL_START(_, unitId, _, spellId)
+    if unitId == 'player' then
+        self:CancelTimers()
+        Rotation:HandleSpellCastChannelStart(spellId)
+    end
+end
+
+function RoHUD:UNIT_SPELLCAST_CHANNEL_STOP(_, unitId, _, spellId)
+    if unitId == 'player' then
+        self:StartTimers()
+        Rotation:HandleSpellCastChannelStop(spellId)
+    end
+end
+
+function RoHUD:UNIT_SPELLCAST_SUCCEEDED(_, unitId, _, spellId)
+    if unitId == 'player' then
+        Rotation:HandleSpellCastSucceeded(spellId)
+    end
 end
 
 RoHUD:RegisterEvent("PLAYER_ENTERING_WORLD")
 RoHUD:RegisterEvent("PLAYER_TARGET_CHANGED")
-
---= _G["ElvNP_Player"]
+RoHUD:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+RoHUD:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+RoHUD:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+RoHUD:RegisterEvent("UNIT_SPELLCAST_START")
