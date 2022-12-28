@@ -1,17 +1,17 @@
 local RotationHUD, Abilities = ...
 local RotationHUD, Rotation = ...
-local RotationHUD, Layouts = ...
-local RotationHUD, Grid = ...
+local RotationHUD, KeyboardDisplay = ...
+local RotationHUD, KeyboardSettings = ...
 
 RoHUD = LibStub('AceAddon-3.0'):NewAddon('RoHUD', 'AceConsole-3.0', 'AceEvent-3.0', 'AceTimer-3.0');
-
+local Icon = LibStub("LibDBIcon-1.0")
 local GUI = LibStub("AceGUI-3.0")
 local ConfigDialog = LibStub("AceConfigDialog-3.0")
 local ConfigDB = LibStub("AceDB-3.0")
 local ConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local spellListFrame, specIconList = {}, {}
 local healthBarFrame = {}
-RoHUD.selectedLayout = Layouts.G13
+
 RoHUD.masterPriorityList = {}
 RoHUD.damageArgs = {}
 RoHUD.defenseArgs = {}
@@ -24,7 +24,8 @@ RoHUD.defaultOptions = {
         damagePriorities = { { spellId = 100784 } },
         defensePriorities = { { spellId = 100784 } },
         cooldownPriorities = { { spellId = 100784 } },
-        healingPriorities = { { spellId = 100784 } }
+        healingPriorities = { { spellId = 100784 } },
+        minimap = { hide = false }
     }
 }
 
@@ -317,52 +318,67 @@ function RoHUD:CancelTimers()
     self:CancelAllTimers()
 end
 
+function RoHUD:CreateMiniMapButton()
+    local RoHUD_LDB = LibStub("LibDataBroker-1.1"):NewDataObject("rohudldb", {
+        type = "data source",
+        text = "bunnies!",
+        icon = "Interface\\Icons\\INV_Chest_Cloth_17",
+        OnClick = function()
+            ConfigDialog:Open("RoHUD")
+        end,
+    })
+    Icon:Register("MiniMapIcon", RoHUD_LDB, self.db.profile.minimap)
+end
+
 function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
     healthBarFrame = _G["ElvNP_Player"]
-    Grid.DamagePriorities = self.db.profile.damagePriorities
-    Grid.DefensePriorities = self.db.profile.defensePriorities
-    Grid.CooldownPriorities = self.db.profile.cooldownPriorities
-    Grid.HealingPriorities = self.db.profile.healingPriorities
+    KeyboardDisplay.DamagePriorities = self.db.profile.damagePriorities
+    KeyboardDisplay.DefensePriorities = self.db.profile.defensePriorities
+    KeyboardDisplay.CooldownPriorities = self.db.profile.cooldownPriorities
+    KeyboardDisplay.HealingPriorities = self.db.profile.healingPriorities
 
-    Grid:InitializeIconGrid(self.selectedLayout, healthBarFrame)
+    KeyboardDisplay:InitializeIconGrid(KeyboardSettings.G13, healthBarFrame)
+
+    self:CreateMiniMapButton()
 
     ConfigDialog:Open("RoHUD")
     ConfigDialog:SelectGroup("RoHUD", "priorities", "damage")
+
 end
 
 function RoHUD:PLAYER_TARGET_CHANGED()
     if (UnitCanAttack("player", "target")) then
         self:StartTimers()
-        Grid:ShowGrid(healthBarFrame)
+        KeyboardDisplay:ShowGrid(healthBarFrame)
     else
         self:CancelTimers()
-        Grid:HideGrid(healthBarFrame)
+        KeyboardDisplay:HideGrid(healthBarFrame)
     end
 end
 
 function RoHUD:UNIT_SPELLCAST_START(_, unitTarget, _, _)
     if (unitTarget == "target") then
-        Grid:CheckInterrupt()
+        KeyboardDisplay:CheckInterrupt()
     end
 end
 
 function RoHUD:UNIT_SPELLCAST_CHANNEL_START(_, unitId, _, spellId)
     if unitId == 'player' then
         self:CancelTimers()
-        Grid:HandleSpellCastChannelStart(spellId)
+        KeyboardDisplay:HandleSpellCastChannelStart(spellId)
     end
 end
 
 function RoHUD:UNIT_SPELLCAST_CHANNEL_STOP(_, unitId, _, spellId)
     if unitId == 'player' then
         self:StartTimers()
-        Grid:HandleSpellCastChannelStop(spellId)
+        KeyboardDisplay:HandleSpellCastChannelStop(spellId)
     end
 end
 
 function RoHUD:UNIT_SPELLCAST_SUCCEEDED(_, unitId, _, spellId)
     if unitId == 'player' then
-        Grid:HandleSpellCastSucceeded(spellId)
+        KeyboardDisplay:HandleSpellCastSucceeded(spellId)
     end
 end
 

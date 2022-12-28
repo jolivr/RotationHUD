@@ -1,19 +1,19 @@
-local RotationHUD, Grid = ...
-local RotationHUD, Buttons = ...
+local RotationHUD, KeyboardDisplay = ...
+local RotationHUD, KeyboardSettings = ...
 local RotationHUD, Abilities = ...
 
-Grid.Frames = {}
-Grid.DamageFrames = {}
-Grid.DefenseFrames = {}
-Grid.CooldownFrames = {}
-Grid.HealingFrames = {}
-Grid.DamagePriorities = {}
-Grid.DefensePriorities = {}
-Grid.CooldownPriorities = {}
-Grid.HealingPriorities = {}
-Grid.Channeling = false
+KeyboardDisplay.Frames = {}
+KeyboardDisplay.DamageFrames = {}
+KeyboardDisplay.DefenseFrames = {}
+KeyboardDisplay.CooldownFrames = {}
+KeyboardDisplay.HealingFrames = {}
+KeyboardDisplay.DamagePriorities = {}
+KeyboardDisplay.DefensePriorities = {}
+KeyboardDisplay.CooldownPriorities = {}
+KeyboardDisplay.HealingPriorities = {}
+KeyboardDisplay.Channeling = false
 
-Grid.Colors = {
+KeyboardDisplay.Colors = {
     Default = { 0.95, 0.95, 0.32, 1 },
     Red = { 1, 0, 0, 1 },
     TransRed = { 1, 0, 0, .3 },
@@ -24,15 +24,15 @@ Grid.Colors = {
     Pink = { .3, .7, 1, 1 }
 }
 
-function Grid:InitializeIconGrid(selectedLayout, healthBarFrame)
-    for rowIndex = 1, selectedLayout.rowCount do
+function KeyboardDisplay:InitializeIconGrid(keyboard, healthBarFrame)
+    for rowIndex = 1, keyboard.Layout.rowCount do
         local rowName = "Row" .. rowIndex
-        local row = selectedLayout[rowName]
+        local row = keyboard.Layout[rowName]
 
         for btnIndex = 1, row.buttonCount do
             local btnName = "Button" .. btnIndex
             local btn = row[btnName]
-            local ability = Buttons.Mapping[rowName .. btnName]
+            local ability = keyboard.AbilityMappings[rowName .. btnName]
             local spellId = nil
             if (ability) then
                 spellId = ability.spellId
@@ -50,7 +50,7 @@ function Grid:InitializeIconGrid(selectedLayout, healthBarFrame)
     self:InitializeFrames()
 end
 
-function Grid:CreateFrame(spellId, point, relativeTo, relativePoint, offsetX, offsetY, pframe)
+function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, offsetX, offsetY, pframe)
     local spellTexture
     if (spellId) then
         _, _, spellTexture = GetSpellInfo(spellId);
@@ -95,26 +95,26 @@ function Grid:CreateFrame(spellId, point, relativeTo, relativePoint, offsetX, of
     return btnFrame
 end
 
-function Grid:InitializeFrames()
-    Grid.DamageFrames = Grid:LoadFrameList(self.DamagePriorities)
-    Grid.DefenseFrames = Grid:LoadFrameList(self.DefensePriorities)
-    Grid.CooldownFrames = Grid:LoadFrameList(self.CooldownPriorities)
-    Grid.HealingFrames = Grid:LoadFrameList(self.HealingPriorities)
-    Grid.InterruptAbility = Abilities.Monk.Windwalker.SpearHandStrike
+function KeyboardDisplay:InitializeFrames()
+    KeyboardDisplay.DamageFrames = KeyboardDisplay:LoadFrameList(self.DamagePriorities)
+    KeyboardDisplay.DefenseFrames = KeyboardDisplay:LoadFrameList(self.DefensePriorities)
+    KeyboardDisplay.CooldownFrames = KeyboardDisplay:LoadFrameList(self.CooldownPriorities)
+    KeyboardDisplay.HealingFrames = KeyboardDisplay:LoadFrameList(self.HealingPriorities)
+    KeyboardDisplay.InterruptAbility = Abilities.Monk.Windwalker.SpearHandStrike
 end
 
-function Grid:LoadFrameList(priorityList)
+function KeyboardDisplay:LoadFrameList(priorityList)
     local frames = {}
     for _, ability in pairs(priorityList) do
         if (ability) then
-            tinsert(frames, Buttons.AbilityMapping[ability.spellId])
+            tinsert(frames, KeyboardSettings.AbilityMapping[ability.spellId])
         end
     end
 
     return frames
 end
 
-function Grid:AttachToNamePlate(healthBarFrame)
+function KeyboardDisplay:AttachToNamePlate(healthBarFrame)
     local plate = C_NamePlate.GetNamePlateForUnit("target")
     local keyBtn = _G["Row1Button1"]
     local yOfs = 0
@@ -135,7 +135,7 @@ function Grid:AttachToNamePlate(healthBarFrame)
     end
 end
 
-function Grid:ShowGrid(healthBarFrame)
+function KeyboardDisplay:ShowGrid(healthBarFrame)
     if (self:AttachToNamePlate(healthBarFrame)) then
         for i, btnFrame in pairs(self.Frames) do
             btnFrame:SetAlpha(1)
@@ -143,7 +143,7 @@ function Grid:ShowGrid(healthBarFrame)
     end
 end
 
-function Grid:HideGrid(healthBarFrame)
+function KeyboardDisplay:HideGrid(healthBarFrame)
     for i, btnFrame in pairs(self.Frames) do
         btnFrame:SetAlpha(0)
     end
@@ -154,7 +154,7 @@ function Grid:HideGrid(healthBarFrame)
 
 end
 
-function Grid:Saturate(btnFrame)
+function KeyboardDisplay:Saturate(btnFrame)
     local frame = _G[btnFrame]
     if not frame then
         frame = btnFrame
@@ -164,7 +164,7 @@ function Grid:Saturate(btnFrame)
     t:SetDesaturated(false)
 end
 
-function Grid:Desaturate(btnFrame)
+function KeyboardDisplay:Desaturate(btnFrame)
     local frame = _G[btnFrame]
     -- if not frame then
     -- 	frame =btnFrame
@@ -175,7 +175,7 @@ function Grid:Desaturate(btnFrame)
     t:SetDesaturated(true)
 end
 
-function Grid:SetColor(btnFrame, color)
+function KeyboardDisplay:SetColor(btnFrame, color)
     local r, g, b, a = color[1], color[2], color[3], color[4]
     local frame = _G[btnFrame]
     if (frame) then
@@ -184,31 +184,31 @@ function Grid:SetColor(btnFrame, color)
     end
 end
 
-function Grid:ShowGlow(btnFrame, color)
+function KeyboardDisplay:ShowGlow(btnFrame, color)
     local frame = _G[btnFrame]
     if (frame) then
         LibStub("LibCustomGlow-1.0").ButtonGlow_Start(frame, color)
     end
 end
 
-function Grid:ShowNextSpellGlow(nextFrame, color)
+function KeyboardDisplay:ShowNextSpellGlow(nextFrame, color)
     self:ShowGlow(nextFrame, color)
 end
 
-function Grid:HideGlow(btnFrame)
+function KeyboardDisplay:HideGlow(btnFrame)
     local frame = _G[btnFrame]
     if (frame) then
         LibStub("LibCustomGlow-1.0").ButtonGlow_Stop(frame)
     end
 end
 
-function Grid:HideAllGlows(frameTable)
+function KeyboardDisplay:HideAllGlows(frameTable)
     for index, frame in pairs(frameTable) do
         self:HideGlow(frame)
     end
 end
 
-function Grid:ShowButtonClick(btnFrame)
+function KeyboardDisplay:ShowButtonClick(btnFrame)
     local frame = _G[btnFrame]
     local color = self.Colors.Yellow
     local r, g, b = color[1], color[2], color[3]
@@ -220,7 +220,7 @@ function Grid:ShowButtonClick(btnFrame)
     end
 end
 
-function Grid:HideButtonClick(btnFrame)
+function KeyboardDisplay:HideButtonClick(btnFrame)
     local frame = _G[btnFrame]
     if (frame) then
         if (frame.overlay) then
@@ -231,23 +231,23 @@ function Grid:HideButtonClick(btnFrame)
     end
 end
 
-function Grid:HandleSpellCastChannelStart(spellId)
+function KeyboardDisplay:HandleSpellCastChannelStart(spellId)
     self.Channeling = true
-    local frame = Buttons.AbilityMapping[spellId]
+    local frame = KeyboardSettings.AbilityMapping[spellId]
     if (frame ~= nil) then
         --cancelTimers()
         self:HideAllGlows(self.DamageFrames)
         self:HideAllGlows(self.DefenseFrames)
         self:HideAllGlows(self.CooldownFrames)
         self:HideAllGlows(self.HealingFrames)
-        local btnFrame = Buttons.AbilityMapping[self.InterruptAbility.spellId]
+        local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
         self:HideGlow(btnFrame)
         self:ShowButtonClick(frame)
     end
 end
 
-function Grid:HandleSpellCastChannelStop(spellId)
-    local frame = Buttons.AbilityMapping[spellId]
+function KeyboardDisplay:HandleSpellCastChannelStop(spellId)
+    local frame = KeyboardSettings.AbilityMapping[spellId]
     if (frame) then
         --startTimers()
         self:HideButtonClick(frame)
@@ -255,8 +255,8 @@ function Grid:HandleSpellCastChannelStop(spellId)
     end
 end
 
-function Grid:HandleSpellCastSucceeded(spellId)
-    local clickedBtn = Buttons.AbilityMapping[spellId]
+function KeyboardDisplay:HandleSpellCastSucceeded(spellId)
+    local clickedBtn = KeyboardSettings.AbilityMapping[spellId]
     self.LastClickedSpellId = spellId
     if (not self.Channeling) then
         self:ShowButtonClick(clickedBtn)
@@ -265,7 +265,7 @@ function Grid:HandleSpellCastSucceeded(spellId)
         end)
 
         if (spellId == self.InterruptAbility.spellId) then
-            local btnFrame = Buttons.AbilityMapping[self.InterruptAbility.spellId]
+            local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
             self:HideGlow(btnFrame)
         end
     end
