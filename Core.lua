@@ -1,6 +1,7 @@
 local RotationHUD, Abilities = ...
 local RotationHUD, Rotation = ...
 local RotationHUD, Layouts = ...
+local RotationHUD, Grid = ...
 
 RoHUD = LibStub('AceAddon-3.0'):NewAddon('RoHUD', 'AceConsole-3.0', 'AceEvent-3.0', 'AceTimer-3.0');
 
@@ -16,7 +17,6 @@ RoHUD.damageArgs = {}
 RoHUD.defenseArgs = {}
 RoHUD.cooldownArgs = {}
 RoHUD.healingArgs = {}
-
 
 
 RoHUD.defaultOptions = {
@@ -81,6 +81,7 @@ RoHUD.configOptions = {
 
 function RoHUD:OnInitialize()
     self.db = ConfigDB:New("RotationHUD_DB", self.defaultOptions)
+
     ConfigRegistry:RegisterOptionsTable("RoHUD", self.configOptions)
 
     self:InitializeConfigOptions()
@@ -130,7 +131,7 @@ function RoHUD:CreatePrioritySection(abilityType, optionArgs, priorityList)
                     name = "up",
                     type = "execute",
                     func = function()
-                        self:changeAbilityPriority(priority.spellId, index, index - 1, abilityType, optionArgs,
+                        self:ChangeAbilityPriority(priority.spellId, index, index - 1, abilityType, optionArgs,
                             priorityList)
                     end,
                     order = 2,
@@ -141,7 +142,7 @@ function RoHUD:CreatePrioritySection(abilityType, optionArgs, priorityList)
                     name = "down",
                     type = "execute",
                     func = function()
-                        self:changeAbilityPriority(priority.spellId, index, index + 1, abilityType, optionArgs,
+                        self:ChangeAbilityPriority(priority.spellId, index, index + 1, abilityType, optionArgs,
                             priorityList)
                     end,
                     order = 3,
@@ -153,7 +154,7 @@ function RoHUD:CreatePrioritySection(abilityType, optionArgs, priorityList)
                     type = "execute",
                     confirm = function() return "Delete this ability?" end,
                     func = function()
-                        self:deleteAbilityPriority(index, abilityType, optionArgs, priorityList)
+                        self:DeleteAbilityPriority(index, abilityType, optionArgs, priorityList)
                     end,
                     order = 4,
                     width = .4
@@ -265,7 +266,7 @@ function RoHUD:AddPriority(spellId, type, args, priorityList)
     spellListFrame:Hide()
 end
 
-function RoHUD:deleteAbilityPriority(index, type, args, priorityList)
+function RoHUD:DeleteAbilityPriority(index, type, args, priorityList)
     local maxIndex = #priorityList
     for i, v in pairs(priorityList) do
         local listIndex = tonumber(i)
@@ -281,7 +282,7 @@ function RoHUD:deleteAbilityPriority(index, type, args, priorityList)
     self:CreatePrioritySection(type, args, priorityList)
 end
 
-function RoHUD:changeAbilityPriority(spellId, currentIndex, newIndex, type, args, priorityList)
+function RoHUD:ChangeAbilityPriority(spellId, currentIndex, newIndex, type, args, priorityList)
     if (newIndex > 0) and (newIndex <= #priorityList) then
         local currentAbility = priorityList[currentIndex]
         local prevAbility = priorityList[newIndex]
@@ -318,13 +319,12 @@ end
 
 function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
     healthBarFrame = _G["ElvNP_Player"]
-    Rotation:InitializeIconGrid(self.selectedLayout, healthBarFrame)
+    Grid.DamagePriorities = self.db.profile.damagePriorities
+    Grid.DefensePriorities = self.db.profile.defensePriorities
+    Grid.CooldownPriorities = self.db.profile.cooldownPriorities
+    Grid.HealingPriorities = self.db.profile.healingPriorities
 
-    Rotation.DamageFrames = Rotation:LoadFrameList(self.db.profile.damagePriorities)
-    Rotation.DefenseFrames = Rotation:LoadFrameList(self.db.profile.defensePriorities)
-    Rotation.CooldownFrames = Rotation:LoadFrameList(self.db.profile.cooldownPriorities)
-    Rotation.HealingFrames = Rotation:LoadFrameList(self.db.profile.healingPriorities)
-    Rotation.InterruptAbility = Abilities.Monk.Windwalker.SpearHandStrike
+    Grid:InitializeIconGrid(self.selectedLayout, healthBarFrame)
 
     ConfigDialog:Open("RoHUD")
     ConfigDialog:SelectGroup("RoHUD", "priorities", "damage")
@@ -333,36 +333,36 @@ end
 function RoHUD:PLAYER_TARGET_CHANGED()
     if (UnitCanAttack("player", "target")) then
         self:StartTimers()
-        Rotation:ShowGrid(healthBarFrame)
+        Grid:ShowGrid(healthBarFrame)
     else
         self:CancelTimers()
-        Rotation:HideGrid(healthBarFrame)
+        Grid:HideGrid(healthBarFrame)
     end
 end
 
 function RoHUD:UNIT_SPELLCAST_START(_, unitTarget, _, _)
     if (unitTarget == "target") then
-        Rotation:CheckInterrupt()
+        Grid:CheckInterrupt()
     end
 end
 
 function RoHUD:UNIT_SPELLCAST_CHANNEL_START(_, unitId, _, spellId)
     if unitId == 'player' then
         self:CancelTimers()
-        Rotation:HandleSpellCastChannelStart(spellId)
+        Grid:HandleSpellCastChannelStart(spellId)
     end
 end
 
 function RoHUD:UNIT_SPELLCAST_CHANNEL_STOP(_, unitId, _, spellId)
     if unitId == 'player' then
         self:StartTimers()
-        Rotation:HandleSpellCastChannelStop(spellId)
+        Grid:HandleSpellCastChannelStop(spellId)
     end
 end
 
 function RoHUD:UNIT_SPELLCAST_SUCCEEDED(_, unitId, _, spellId)
     if unitId == 'player' then
-        Rotation:HandleSpellCastSucceeded(spellId)
+        Grid:HandleSpellCastSucceeded(spellId)
     end
 end
 

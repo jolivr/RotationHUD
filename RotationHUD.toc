@@ -10,6 +10,7 @@ embeds.xml
 Layouts.lua
 Monk.lua
 ButtonMappings.lua
+Grid.lua
 Core.lua
 Rotation.lua
 
