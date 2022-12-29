@@ -8,9 +8,9 @@
 embeds.xml
 
 Abilities.lua
-ConfigOptions.lua
 KeyboardSettings.lua
 KeyboardDisplay.lua
+ConfigOptions.lua
 Core.lua
 Rotation.lua
 

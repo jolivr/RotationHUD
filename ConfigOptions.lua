@@ -1,5 +1,6 @@
 local RotationHUD, ConfigOptions = ...
 local RotationHUD, Abilities = ...
+local RotationHUD, KeyboardDisplay = ...
 
 local GUI = LibStub("AceGUI-3.0")
 local ConfigDialog = LibStub("AceConfigDialog-3.0")
@@ -10,12 +11,14 @@ ConfigOptions.DamageArgs = {}
 ConfigOptions.DefenseArgs = {}
 ConfigOptions.CooldownArgs = {}
 ConfigOptions.HealingArgs = {}
+ConfigOptions.KeyboardLayoutArgs = {}
 ConfigOptions.DamagePriorities = {}
 ConfigOptions.DefensePriorities = {}
 ConfigOptions.CooldownPriorities = {}
 ConfigOptions.HealingPriorities = {}
 ConfigOptions.MasterPriorityList = {}
 ConfigOptions.RoHUD = {}
+ConfigOptions.Keyboard = {}
 
 ConfigOptions.Menu = {
     name = "Gamepad Icons - Windwalker",
@@ -25,6 +28,7 @@ ConfigOptions.Menu = {
             name = "Priorities",
             type = "group",
             childGroups = "tree",
+            order = 1,
             args = {
                 damage = {
                     name = "Damage",
@@ -52,6 +56,12 @@ ConfigOptions.Menu = {
                 }
             }
         },
+        layout = {
+            name = "Layout",
+            type = "group",
+            args = ConfigOptions.KeyboardLayoutArgs,
+            order = 2
+        },
         reloadUI = {
             name = "Reload UI",
             type = "execute",
@@ -76,7 +86,7 @@ function ConfigOptions:InitializeMenu()
     self:CreatePrioritySection("Defense", self.DefenseArgs, self.DefensePriorities)
     self:CreatePrioritySection("Cooldown", self.CooldownArgs, self.CooldownPriorities)
     self:CreatePrioritySection("Healing", self.HealingArgs, self.HealingPriorities)
-
+    self:CreateKeyboardLayoutSection()
     self:CompileMasterListOfPriorities()
 end
 
@@ -85,13 +95,23 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
         optionArgs[i] = nil
     end
 
-    for index, priority in pairs(priorityList) do
+   local checkSection = {
+        name = "check " .. abilityType,
+        type = "toggle",
+        order = 1,
+        width = .6,
+        get = function() return priorityList.check end,
+        set = function(_, val) priorityList.check = val end
+    }
+
+    optionArgs["0"] = checkSection
+    for index, priority in pairs(priorityList.abilities) do
         local upDisabled, downDisabled = false, false
 
         if (index == 1) then
             upDisabled = true
         end
-        if (index == #priorityList) then
+        if (index == #priorityList.abilities) then
             downDisabled = true
         end
         local prioritySection = {
@@ -100,6 +120,7 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
             name = "Priority " .. index,
             order = index,
             width = .7,
+            disabled = function() return not priorityList.check end,
             args = {
                 icon = {
                     name = Abilities.Monk.AbilityNameLookup[priority.spellId],
@@ -143,11 +164,11 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                     order = 4,
                     width = .4
                 },
-                energySection = {
-                    name = "energy",
+                toggleSection = {
+                    name = "",
                     type = "group",
-                    order = 5,
                     inline = true,
+                    order = 5,
                     args = {
                         checkEnergy = {
                             name = "check energy",
@@ -156,11 +177,35 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                             width = .6,
                             get = function() return priority.checkEnergyLevel end,
                             set = function(_, val) priority.checkEnergyLevel = val end
-                        },                        
+                        }, 
+                        checkChi = {
+                            name = "check chi",
+                            type = "toggle",
+                            order = 1,
+                            width = .6,
+                            get = function() return priority.checkChiLevel end,
+                            set = function(_, val) priority.checkChiLevel = val end
+                        },
+                        checkHealth = {
+                            name = "check health",
+                            type = "toggle",
+                            order = 1,
+                            width = .6,
+                            get = function() return priority.checkHealthLevel end,
+                            set = function(_, val) priority.checkHealthLevel = val end
+                        },
+                    }
+                },
+                energySection = {
+                    name = "energy",
+                    type = "group",
+                    inline = true,
+                    hidden = function() return not priority.checkEnergyLevel end,
+                    args = {                   
                         energyOp = {
                             name = "operation",
                             type = "select",
-                            disabled = function() return not priority.checkEnergyLevel end,
+                            
                             values = {
                                 ["="] = "=" ,
                                 ["<"] = "<" ,
@@ -176,7 +221,6 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                         energyLevel = {
                             name = "energy %",
                             type = "range",
-                            disabled = function() return not priority.checkEnergyLevel end,
                             min = 0,
                             max = 1,
                             step = .1,
@@ -190,21 +234,12 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                 chiSection = {
                     name = "chi",
                     type = "group",
-                    order = 5,
                     inline = true,
+                    hidden = function() return not priority.checkChiLevel end,
                     args = {
-                        checkChi = {
-                            name = "check chi",
-                            type = "toggle",
-                            order = 1,
-                            width = .6,
-                            get = function() return priority.checkChiLevel end,
-                            set = function(_, val) priority.checkChiLevel = val end
-                        },
                         chiOp = {
                             name = "operation",
                             type = "select",
-                            disabled = function() return not priority.checkChiLevel end,
                             values = {
                                 ["="] = "=" ,
                                 ["<"] = "<" ,
@@ -220,7 +255,6 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                         chiLevel = {
                             name = "chi",
                             type = "range",
-                            disabled = function() return not priority.checkChiLevel end,
                             min = 0,
                             max = 6,
                             step = 1,
@@ -233,21 +267,12 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                 healthSection = {
                     name = "health",
                     type = "group",
-                    order = 5,
                     inline = true,
+                    hidden = function() return not priority.checkHealthLevel end,
                     args = {
-                        checkHealth = {
-                            name = "check health",
-                            type = "toggle",
-                            order = 1,
-                            width = .6,
-                            get = function() return priority.checkHealthLevel end,
-                            set = function(_, val) priority.checkHealthLevel = val end
-                        },
                         healthOp = {
                             name = "operation",
                             type = "select",
-                            disabled = function() return not priority.checkHealthLevel end,
                             values = {
                                 ["="] = "=" ,
                                 ["<"] = "<" ,
@@ -263,7 +288,6 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                         healthLevel = {
                             name = "health",
                             type = "range",
-                            disabled = function() return not priority.checkHealthLevel end,
                             min = 0,
                             max = 1,
                             step = .1,
@@ -280,6 +304,7 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
         }
 
         optionArgs[tostring(index)] = prioritySection
+        
     end
     -- end
     local addNewPrioritySection = {
@@ -295,7 +320,10 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                 imageHeight = 40,
                 imageWidth = 40,
                 func = function()
-                    self:PopulateSpells(abilityType, optionArgs, priorityList)
+                    --self:PopulateSpells(abilityType, optionArgs, priorityList)
+                    local functionArgs = {abilityType, optionArgs, priorityList}
+                    local addFunc = function() ConfigOptions:AddPriority(functionArgs) end
+                    self:PopulateSpells(addFunc, functionArgs)
                 end,
                 order = 1,
                 width = .75
@@ -305,34 +333,94 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
     optionArgs["100"] = addNewPrioritySection
 end
 
+function ConfigOptions:CreateKeyboardLayoutSection()
+    local abilityMappings = self.Keyboard.AbilityMappings
+    for rowIndex = 1, self.Keyboard.Layout.rowCount do
+        local rowName = "Row" .. rowIndex
+        local row = self.Keyboard.Layout[rowName]
+        local rowSection = {
+            name = "",
+            type = "group",
+            inline = true,
+            order = rowIndex,
+            args = {}
+        }
+
+        local btnSections = {}
+        for btnIndex = 1, row.buttonCount do
+            local btnName = "Button" .. btnIndex
+            local btn = row[btnName]
+            local ability = abilityMappings[rowName .. btnName]
+            local spellId = nil
+            if (ability) then
+                spellId = ability.spellId
+            end
+
+            local btnSection = {
+                    name = "",
+                    type = "execute",
+                    image = GetSpellTexture(spellId),
+                    imageHeight = 40,
+                    imageWidth = 40,
+                    func = function()
+                        local functionArgs = {rowName .. btnName}
+                        local modFunc = function() ConfigOptions:ModifyButtonLayout(functionArgs) end
+                        self:PopulateSpells(modFunc, functionArgs)
+                    end,
+                    order = btnIndex,
+                    width = .40
+            }
+            btnSections[rowName .. btnName] = btnSection
+        end
+        rowSection.args = btnSections
+        self.KeyboardLayoutArgs[rowName] = rowSection
+    end
+end
+
 function ConfigOptions:CompileMasterListOfPriorities()
-    for _, ability in pairs(self.DamagePriorities) do
+    for _, ability in pairs(self.DamagePriorities.abilities) do
         self.MasterPriorityList[ability.spellId] = ability
     end
-    for _, ability in pairs(self.DefensePriorities) do
+    for _, ability in pairs(self.DefensePriorities.abilities) do
         self.MasterPriorityList[ability.spellId] = ability
     end
-    for _, ability in pairs(self.CooldownPriorities) do
+    for _, ability in pairs(self.CooldownPriorities.abilities) do
         self.MasterPriorityList[ability.spellId] = ability
     end
-    for _, ability in pairs(self.HealingPriorities) do
+    for _, ability in pairs(self.HealingPriorities.abilities) do
         self.MasterPriorityList[ability.spellId] = ability
     end
 end
 
-function ConfigOptions:AddPriority(spellId, type, args, priorityList)
-
+function ConfigOptions:AddPriority(priorityArgs)
+    local spellId = priorityArgs[4]
+    local abilityType = priorityArgs[1]
+    local optionArgs = priorityArgs[2]
+    local priorityList = priorityArgs[3]
     if not spellId then return end
-    local newIndex = #priorityList + 1
+    local newIndex = #priorityList.abilities + 1
 
-    priorityList[newIndex] = Abilities.Monk.AbilityLookup[spellId]
+    priorityList.abilities[newIndex] = Abilities.Monk.AbilityLookup[spellId]
 
     ConfigRegistry:NotifyChange("RoHUD"); -- necessary for options to refresh
-    self:CreatePrioritySection(type, args, priorityList)
+    self:CreatePrioritySection(abilityType, optionArgs, priorityList)
     spellListFrame:Hide()
 end
 
-function ConfigOptions:PopulateSpells(type, args, priorityList)
+function ConfigOptions:ModifyButtonLayout(priorityArgs)
+    local btnId = priorityArgs[1]
+    local spellId = priorityArgs[2]
+
+    self.Keyboard.AbilityMappings[btnId] = Abilities.Monk.AbilityLookup[spellId]
+    ConfigRegistry:NotifyChange("RoHUD");
+    self:CreateKeyboardLayoutSection()
+    -- change this to just modifying the texture
+   -- KeyboardDisplay:InitializeIconGrid(self.Keyboard)
+    spellListFrame:Hide()
+end
+
+--type, args, priorityList, 
+function ConfigOptions:PopulateSpells(callbackFunc, callbackArgs)
     local spellList = {}
     local index = 1
     spellListFrame = GUI:Create("Frame")
@@ -342,7 +430,7 @@ function ConfigOptions:PopulateSpells(type, args, priorityList)
     spellListFrame:SetHeight(400)
     spellListFrame:SetWidth(500)
 
-    self:CompileMasterListOfPriorities()
+    --self:CompileMasterListOfPriorities()
 
     specIconList = GUI:Create("ScrollFrame")
     specIconList:SetLayout("Flow")
@@ -377,22 +465,23 @@ function ConfigOptions:PopulateSpells(type, args, priorityList)
         addIcon:SetImage(spell.icon)
         addIcon:SetImageSize(36, 36)
         addIcon:SetLabel(spell.name)
-        addIcon:SetCallback("OnClick", function(self)
-            ConfigOptions:AddPriority(spell.id, type, args, priorityList)
+        addIcon:SetCallback("OnClick", function()
+            tinsert(callbackArgs,spell.id)
+            callbackFunc(callbackArgs)--ConfigOptions:AddPriority(spell.id, type, args, priorityList)
         end)
         specIconList:AddChild(addIcon)
     end
 end
 
 function ConfigOptions:DeleteAbilityPriority(index, type, args, priorityList)
-    local maxIndex = #priorityList
-    for i, v in pairs(priorityList) do
+    local maxIndex = #priorityList.abilities
+    for i, v in pairs(priorityList.abilities) do
         local listIndex = tonumber(i)
         if (listIndex >= index and listIndex ~= 100) then
             if (i ~= maxIndex) then
-                priorityList[listIndex] = priorityList[listIndex + 1]
+                priorityList.abilities[listIndex] = priorityList.abilities[listIndex + 1]
             else
-                table.remove(priorityList, listIndex)
+                table.remove(priorityList.abilities, listIndex)
             end
         end
     end
@@ -401,12 +490,12 @@ function ConfigOptions:DeleteAbilityPriority(index, type, args, priorityList)
 end
 
 function ConfigOptions:ChangeAbilityPriority(spellId, currentIndex, newIndex, type, args, priorityList)
-    if (newIndex > 0) and (newIndex <= #priorityList) then
-        local currentAbility = priorityList[currentIndex]
-        local prevAbility = priorityList[newIndex]
+    if (newIndex > 0) and (newIndex <= #priorityList.abilities) then
+        local currentAbility = priorityList.abilities[currentIndex]
+        local prevAbility = priorityList.abilities[newIndex]
 
-        priorityList[newIndex] = currentAbility
-        priorityList[currentIndex] = prevAbility
+        priorityList.abilities[newIndex] = currentAbility
+        priorityList.abilities[currentIndex] = prevAbility
     end
 
     self:CreatePrioritySection(type, args, priorityList)

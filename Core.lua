@@ -11,17 +11,22 @@ RoHUD = LibStub('AceAddon-3.0'):NewAddon('RoHUD', 'AceConsole-3.0', 'AceEvent-3.
 
 RoHUD.defaultOptions = {
     profile = {
-        damagePriorities = { Abilities.Monk.Windwalker.BlackoutKick },
-        defensePriorities = { Abilities.Monk.Windwalker.BlackoutKick },
-        cooldownPriorities = { Abilities.Monk.Windwalker.BlackoutKick },
-        healingPriorities = { Abilities.Monk.Windwalker.BlackoutKick },
-        minimap = { hide = false }
+        damagePriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
+        defensePriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
+        cooldownPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
+        healingPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
+        minimap = { hide = false },
+        keyboard = KeyboardSettings.G13
     }
 }
 
 function RoHUD:OnInitialize()
     self.db = ConfigDB:New("RotationHUD_DB", self.defaultOptions)
+    self:InitializePersistentVariables()
+
     ConfigOptions:InitializeRegistry()
+    self:CreateMiniMapButton()
+    
     self:Print("Rotation HUD Initialized")
 end
 
@@ -63,23 +68,24 @@ function RoHUD:CreateMiniMapButton()
     Icon:Register("MiniMapIcon", RoHUD_LDB, self.db.profile.minimap)
 end
 
-function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
-    healthBarFrame = _G["ElvNP_Player"] --temporary variable
+function RoHUD:InitializePersistentVariables()
     KeyboardDisplay.DamagePriorities = self.db.profile.damagePriorities
     KeyboardDisplay.DefensePriorities = self.db.profile.defensePriorities
     KeyboardDisplay.CooldownPriorities = self.db.profile.cooldownPriorities
     KeyboardDisplay.HealingPriorities = self.db.profile.healingPriorities
 
-    KeyboardDisplay:InitializeIconGrid(KeyboardSettings.G13, healthBarFrame)
-
     ConfigOptions.DamagePriorities = self.db.profile.damagePriorities
     ConfigOptions.DefensePriorities = self.db.profile.defensePriorities
     ConfigOptions.CooldownPriorities = self.db.profile.cooldownPriorities
     ConfigOptions.HealingPriorities = self.db.profile.healingPriorities
+    ConfigOptions.Keyboard = self.db.profile.keyboard
+end
 
+function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
+    healthBarFrame = _G["ElvNP_Player"] --temporary variable
+    KeyboardDisplay.HealthBarFrame = healthBarFrame
+    KeyboardDisplay:InitializeIconGrid(self.db.profile.keyboard)
     ConfigOptions:InitializeMenu()
-
-    self:CreateMiniMapButton()
 end
 
 function RoHUD:PLAYER_TARGET_CHANGED()
@@ -101,6 +107,7 @@ end
 function RoHUD:UNIT_SPELLCAST_CHANNEL_START(_, unitId, _, spellId)
     if unitId == 'player' then
         self:CancelTimers()
+        Rotation:ClearPreviousButtons()
         KeyboardDisplay:HandleSpellCastChannelStart(spellId)
     end
 end

@@ -12,6 +12,7 @@ KeyboardDisplay.DefensePriorities = {}
 KeyboardDisplay.CooldownPriorities = {}
 KeyboardDisplay.HealingPriorities = {}
 KeyboardDisplay.Channeling = false
+KeyboardDisplay.HealthBarFrame = {}
 
 KeyboardDisplay.Colors = {
     Default = { 0.95, 0.95, 0.32, 1 },
@@ -24,7 +25,7 @@ KeyboardDisplay.Colors = {
     Pink = { .3, .7, 1, 1 }
 }
 
-function KeyboardDisplay:InitializeIconGrid(keyboard, healthBarFrame)
+function KeyboardDisplay:InitializeIconGrid(keyboard)
     for rowIndex = 1, keyboard.Layout.rowCount do
         local rowName = "Row" .. rowIndex
         local row = keyboard.Layout[rowName]
@@ -43,8 +44,8 @@ function KeyboardDisplay:InitializeIconGrid(keyboard, healthBarFrame)
         end
     end
 
-    if (healthBarFrame) then
-        healthBarFrame:SetAlpha(0)
+    if (self.HealthBarFrame) then
+        self.HealthBarFrame:SetAlpha(0)
     end
 
     self:InitializeFrames()
@@ -105,7 +106,7 @@ end
 
 function KeyboardDisplay:LoadFrameList(priorityList)
     local frames = {}
-    for _, ability in pairs(priorityList) do
+    for _, ability in pairs(priorityList.abilities) do
         if (ability) then
             tinsert(frames, KeyboardSettings.AbilityMapping[ability.spellId])
         end

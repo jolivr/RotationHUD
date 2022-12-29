@@ -1,6 +1,6 @@
 local RotationHUD, Rotation = ...
-local RotationHUD, Buttons = ...
-local RotationHUD, Grid = ...
+local RotationHUD, KeyboardSettings = ...
+local RotationHUD, KeyboardDisplay = ...
 
 Rotation.PrevDamageButton = {}
 Rotation.PrevDefenseButton = {}
@@ -177,24 +177,28 @@ function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, tar
     return conditionMatched
 end
 
-function Rotation:CheckAbilities(abilityPool, lastCheckedBtn, frames, glowColor, typeName)
+function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor, typeName)
+    if(not priorityList.check) then
+        return
+    end
+
     local readyButtons = {}
     local readyButton = 0
-    for _, ability in pairs(abilityPool) do
+    for _, ability in pairs(priorityList.abilities) do
         if (ability) then
-            local btn = Buttons.AbilityMapping[ability.spellId]
+            local btn = KeyboardSettings.AbilityMapping[ability.spellId]
             if (btn) then
                 local ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healthGood = self:AbilityReady(ability)
                 if (ready) then
-                    Grid:SetColor(btn, Grid.Colors.Clear)
-                    Grid:Saturate(btn)
+                    KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Clear)
+                    KeyboardDisplay:Saturate(btn)
                     tinsert(readyButtons, btn)
                 else
                     if (not inRange) then
-                        Grid:Desaturate(btn)
-                        Grid:SetColor(btn, Grid.Colors.Red)
+                        KeyboardDisplay:Desaturate(btn)
+                        KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Red)
                     elseif (notEnoughPower or not energyGood or not chiGood) then
-                        Grid:Desaturate(btn)
+                        KeyboardDisplay:Desaturate(btn)
                     end
                 end
             end
@@ -203,14 +207,14 @@ function Rotation:CheckAbilities(abilityPool, lastCheckedBtn, frames, glowColor,
     end
 
     if (not readyButtons[1]) then
-        Grid:HideAllGlows(frames)
+        KeyboardDisplay:HideAllGlows(frames)
         return
     end
 
     local nextInLineButton = readyButtons[1]
     if (nextInLineButton ~= lastCheckedBtn) then
-        Grid:HideAllGlows(frames)
-        Grid:ShowNextSpellGlow(nextInLineButton, glowColor)
+        KeyboardDisplay:HideAllGlows(frames)
+        KeyboardDisplay:ShowNextSpellGlow(nextInLineButton, glowColor)
         readyButton = nextInLineButton
     else
         readyButton = lastCheckedBtn
@@ -221,15 +225,21 @@ end
 
 function Rotation:CheckInterrupt()
     local name, _, _, _, _, _, _, notInterruptible, _ = UnitCastingInfo("target")
-    local btnFrame = Buttons.AbilityMapping[self.InterruptAbility.spellId]
+    local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
     if (not notInterruptible and self:AbilityReady(self.InterruptAbility)) then
         print(name, " is interruptible!")
-        Grid:ShowGlow(btnFrame, self.Colors.Pink)
+        KeyboardDisplay:ShowGlow(btnFrame, self.Colors.Pink)
     else
-        Grid:HideGlow(btnFrame)
+        KeyboardDisplay:HideGlow(btnFrame)
     end
 end
 
+function Rotation:ClearPreviousButtons()
+    Rotation.PrevDamageButton = {}
+    Rotation.PrevDefenseButton = {}
+    Rotation.PrevCooldownButton = {}
+    Rotation.PrevHealingButton = {}
+end
 
 
 
