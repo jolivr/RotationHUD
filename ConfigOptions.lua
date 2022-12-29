@@ -72,7 +72,6 @@ function ConfigOptions:InitializeRegistry()
 end
 
 function ConfigOptions:InitializeMenu()
-    DevTools_Dump(self.DamagePriorities)
     self:CreatePrioritySection("Damage", self.DamageArgs, self.DamagePriorities)
     self:CreatePrioritySection("Defense", self.DefenseArgs, self.DefensePriorities)
     self:CreatePrioritySection("Cooldown", self.CooldownArgs, self.CooldownPriorities)

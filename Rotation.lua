@@ -87,8 +87,7 @@ function Rotation:AbilityReady(ability)
     local inRange = IsSpellInRange(spellId, "target")
     local energyGood = true
     local chiGood = true
-    local healingSpell = false
-    local lowHealth = false
+    local healthGood = true
     local justClicked = false
 
     if (self.LastClickedSpellId == spellId) then
@@ -112,9 +111,9 @@ function Rotation:AbilityReady(ability)
     if (ability.checkHealthLevel) then
         local health = UnitHealth("player")
         local healthMax = UnitHealthMax("player")
-        local healthCheck = self:ConditionalCheck(health, healthMax, ability.checkHealthLevel, ability.healthOp, true)
-        if(healthCheck) then
-            lowHealth = true
+        local healthCheck = self:ConditionalCheck(health, healthMax, ability.healthLevel, ability.healthOp, true)
+        if(not healthCheck) then
+            healthGood = false
         end
     end
 
@@ -134,21 +133,13 @@ function Rotation:AbilityReady(ability)
     end
 
     if (
-        known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood and inRange and
+        known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood and inRange and healthGood and
             not justClicked
         ) then
         ready = true
-
-        if (healingSpell) then
-            if (lowHealth) then
-                ready = true
-            else
-                ready = false
-            end
-        end
     end
 
-    return ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healingSpell, lowHealth
+    return ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown
 end
 
 function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, targetOp, isPercentage)

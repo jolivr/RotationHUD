@@ -44,12 +44,10 @@ function RoHUD:PriorityRotationTimer()
 end
 
 function RoHUD:StartTimers()
-    self:Print("Starting timers")
     self:ScheduleRepeatingTimer("PriorityRotationTimer", .25)
 end
 
 function RoHUD:CancelTimers()
-    self:Print("Stopping timers")
     self:CancelAllTimers()
 end
 
@@ -80,7 +78,7 @@ function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
     ConfigOptions.HealingPriorities = self.db.profile.healingPriorities
 
     ConfigOptions:InitializeMenu()
-    self:OpenOptions()
+
     self:CreateMiniMapButton()
 end
 
