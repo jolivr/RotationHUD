@@ -14,6 +14,8 @@ ConfigOptions.DamagePriorities = {}
 ConfigOptions.DefensePriorities = {}
 ConfigOptions.CooldownPriorities = {}
 ConfigOptions.HealingPriorities = {}
+ConfigOptions.MasterPriorityList = {}
+ConfigOptions.RoHUD = {}
 
 ConfigOptions.Menu = {
     name = "Gamepad Icons - Windwalker",
@@ -59,6 +61,7 @@ ConfigOptions.Menu = {
     },
 }
 
+
 function ConfigOptions:Open()
     ConfigDialog:Open("RoHUD")
     ConfigDialog:SelectGroup("RoHUD", "priorities", "damage")
@@ -74,6 +77,8 @@ function ConfigOptions:InitializeMenu()
     self:CreatePrioritySection("Defense", self.DefenseArgs, self.DefensePriorities)
     self:CreatePrioritySection("Cooldown", self.CooldownArgs, self.CooldownPriorities)
     self:CreatePrioritySection("Healing", self.HealingArgs, self.HealingPriorities)
+
+    self:CompileMasterListOfPriorities()
 end
 
 function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityList)
@@ -138,7 +143,140 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                     end,
                     order = 4,
                     width = .4
+                },
+                energySection = {
+                    name = "energy",
+                    type = "group",
+                    order = 5,
+                    inline = true,
+                    args = {
+                        checkEnergy = {
+                            name = "check energy",
+                            type = "toggle",
+                            order = 1,
+                            width = .6,
+                            get = function() return priority.checkEnergyLevel end,
+                            set = function(_, val) priority.checkEnergyLevel = val end
+                        },                        
+                        energyOp = {
+                            name = "operation",
+                            type = "select",
+                            disabled = function() return not priority.checkEnergyLevel end,
+                            values = {
+                                ["="] = "=" ,
+                                ["<"] = "<" ,
+                                [">"] = ">" ,
+                                ["<="] = "<=",
+                                [">="] = ">="
+                            },
+                            width = .4,
+                            order = 2,
+                            get = function() return priority.energyOp end,
+                            set = function(_, val) priority.energyOp = val end
+                        },
+                        energyLevel = {
+                            name = "energy %",
+                            type = "range",
+                            disabled = function() return not priority.checkEnergyLevel end,
+                            min = 0,
+                            max = 1,
+                            step = .1,
+                            isPercent = true,
+                            order = 3,
+                            get = function() return priority.energyLevel end,
+                            set = function(_, val) priority.energyLevel = val end
+                        }
+                    }
+                },
+                chiSection = {
+                    name = "chi",
+                    type = "group",
+                    order = 5,
+                    inline = true,
+                    args = {
+                        checkChi = {
+                            name = "check chi",
+                            type = "toggle",
+                            order = 1,
+                            width = .6,
+                            get = function() return priority.checkChiLevel end,
+                            set = function(_, val) priority.checkChiLevel = val end
+                        },
+                        chiOp = {
+                            name = "operation",
+                            type = "select",
+                            disabled = function() return not priority.checkChiLevel end,
+                            values = {
+                                ["="] = "=" ,
+                                ["<"] = "<" ,
+                                [">"] = ">" ,
+                                ["<="] = "<=",
+                                [">="] = ">="
+                            },
+                            width = .4,
+                            order = 2,
+                            get = function() return priority.chiOp end,
+                            set = function(_, val) priority.chiOp = val end
+                        },
+                        chiLevel = {
+                            name = "chi",
+                            type = "range",
+                            disabled = function() return not priority.checkChiLevel end,
+                            min = 0,
+                            max = 6,
+                            step = 1,
+                            order = 3,
+                            get = function() return priority.chiLevel end,
+                            set = function(_, val) priority.chiLevel = val end
+                        }
+                    }
+                },
+                healthSection = {
+                    name = "health",
+                    type = "group",
+                    order = 5,
+                    inline = true,
+                    args = {
+                        checkHealth = {
+                            name = "check health",
+                            type = "toggle",
+                            order = 1,
+                            width = .6,
+                            get = function() return priority.checkHealthLevel end,
+                            set = function(_, val) priority.checkHealthLevel = val end
+                        },
+                        healthOp = {
+                            name = "operation",
+                            type = "select",
+                            disabled = function() return not priority.checkHealthLevel end,
+                            values = {
+                                ["="] = "=" ,
+                                ["<"] = "<" ,
+                                [">"] = ">" ,
+                                ["<="] = "<=",
+                                [">="] = ">="
+                            },
+                            width = .4,
+                            order = 2,
+                            get = function() return priority.healthOp end,
+                            set = function(_, val) priority.healthOp = val end
+                        },
+                        healthLevel = {
+                            name = "health",
+                            type = "range",
+                            disabled = function() return not priority.checkHealthLevel end,
+                            min = 0,
+                            max = 1,
+                            step = .1,
+                            isPercent = true,
+                            order = 3,
+                            get = function() return priority.healthLevel end,
+                            set = function(_, val) priority.healthLevel = val end
+                        }
+                    }
                 }
+
+
             }
         }
 
@@ -168,6 +306,33 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
     optionArgs["100"] = addNewPrioritySection
 end
 
+function ConfigOptions:CompileMasterListOfPriorities()
+    for _, ability in pairs(self.DamagePriorities) do
+        self.MasterPriorityList[ability.spellId] = ability
+    end
+    for _, ability in pairs(self.DefensePriorities) do
+        self.MasterPriorityList[ability.spellId] = ability
+    end
+    for _, ability in pairs(self.CooldownPriorities) do
+        self.MasterPriorityList[ability.spellId] = ability
+    end
+    for _, ability in pairs(self.HealingPriorities) do
+        self.MasterPriorityList[ability.spellId] = ability
+    end
+end
+
+function ConfigOptions:AddPriority(spellId, type, args, priorityList)
+
+    if not spellId then return end
+    local newIndex = #priorityList + 1
+
+    priorityList[newIndex] = Abilities.Monk.AbilityLookup[spellId]
+
+    ConfigRegistry:NotifyChange("RoHUD"); -- necessary for options to refresh
+    self:CreatePrioritySection(type, args, priorityList)
+    spellListFrame:Hide()
+end
+
 function ConfigOptions:PopulateSpells(type, args, priorityList)
     local spellList = {}
     local index = 1
@@ -195,7 +360,8 @@ function ConfigOptions:PopulateSpells(type, args, priorityList)
             for n = offset + 1, offset + numSpells do
                 if not IsPassiveSpell(n, "spell") then
                     local spellName, _, spellIcon, _, _, _, spellId = GetSpellInfo(n, "spell")
-                    if spellName ~= nil and self.masterPriorityList[spellId] == nil then
+                    --and self.MasterPriorityList[spellId] == nil
+                    if spellName ~= nil  then
                         spellList[index] = { name = spellName, icon = spellIcon, id = spellId }
                         index = index + 1
                     end
@@ -213,22 +379,10 @@ function ConfigOptions:PopulateSpells(type, args, priorityList)
         addIcon:SetImageSize(36, 36)
         addIcon:SetLabel(spell.name)
         addIcon:SetCallback("OnClick", function(self)
-            RoHUD:AddPriority(spell.id, type, args, priorityList)
+            ConfigOptions:AddPriority(spell.id, type, args, priorityList)
         end)
         specIconList:AddChild(addIcon)
     end
-end
-
-function ConfigOptions:AddPriority(spellId, type, args, priorityList)
-
-    if not spellId then return end
-    local newIndex = #priorityList + 1
-
-    priorityList[newIndex] = Abilities.Monk.AbilityLookup[spellId]
-
-    ConfigRegistry:NotifyChange("RoHUD"); -- necessary for options to refresh
-    self:CreatePrioritySection(type, args, priorityList)
-    spellListFrame:Hide()
 end
 
 function ConfigOptions:DeleteAbilityPriority(index, type, args, priorityList)

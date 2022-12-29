@@ -2,20 +2,19 @@ local RotationHUD, Rotation = ...
 local RotationHUD, KeyboardDisplay = ...
 local RotationHUD, KeyboardSettings = ...
 local RotationHUD, ConfigOptions = ...
-
+local RotationHUD, Abilities = ...
 local Icon = LibStub("LibDBIcon-1.0")
 local ConfigDB = LibStub("AceDB-3.0")
 local healthBarFrame = {}
 
 RoHUD = LibStub('AceAddon-3.0'):NewAddon('RoHUD', 'AceConsole-3.0', 'AceEvent-3.0', 'AceTimer-3.0');
-RoHUD.masterPriorityList = {}
 
 RoHUD.defaultOptions = {
     profile = {
-        damagePriorities = { { spellId = 100784 } },
-        defensePriorities = { { spellId = 100784 } },
-        cooldownPriorities = { { spellId = 100784 } },
-        healingPriorities = { { spellId = 100784 } },
+        damagePriorities = { Abilities.Monk.Windwalker.BlackoutKick },
+        defensePriorities = { Abilities.Monk.Windwalker.BlackoutKick },
+        cooldownPriorities = { Abilities.Monk.Windwalker.BlackoutKick },
+        healingPriorities = { Abilities.Monk.Windwalker.BlackoutKick },
         minimap = { hide = false }
     }
 }
@@ -26,19 +25,9 @@ function RoHUD:OnInitialize()
     self:Print("Rotation HUD Initialized")
 end
 
-function RoHUD:CompileMasterListOfPriorities()
-    for _, ability in pairs(self.db.profile.damagePriorities) do
-        self.masterPriorityList[ability.spellId] = ability
-    end
-    for _, ability in pairs(self.db.profile.defensePriorities) do
-        self.masterPriorityList[ability.spellId] = ability
-    end
-    for _, ability in pairs(self.db.profile.cooldownPriorities) do
-        self.masterPriorityList[ability.spellId] = ability
-    end
-    for _, ability in pairs(self.db.profile.healingPriorities) do
-        self.masterPriorityList[ability.spellId] = ability
-    end
+function RoHUD:OpenOptions()
+    self:CancelTimers()
+    ConfigOptions:Open()
 end
 
 function RoHUD:PriorityRotationTimer()
@@ -70,7 +59,7 @@ function RoHUD:CreateMiniMapButton()
         text = "bunnies!",
         icon = "Interface\\Icons\\INV_Chest_Cloth_17",
         OnClick = function()
-            ConfigOptions:Open()
+            self:OpenOptions()
         end,
     })
     Icon:Register("MiniMapIcon", RoHUD_LDB, self.db.profile.minimap)
@@ -91,7 +80,7 @@ function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
     ConfigOptions.HealingPriorities = self.db.profile.healingPriorities
 
     ConfigOptions:InitializeMenu()
-
+    self:OpenOptions()
     self:CreateMiniMapButton()
 end
 

@@ -102,17 +102,6 @@ function Rotation:AbilityReady(ability)
     if (inRange == nil) then
         inRange = true
     end
-
-    if (ability.playerHealthCheck) then
-        healingSpell = true
-        local maxPlayerHealth = UnitHealthMax("player");
-        local currentPlayerHealth = UnitHealth("player")
-        local healthPercentage = (currentPlayerHealth / maxPlayerHealth) * 100
-        if (healthPercentage < ability.playerHealthCheck) then
-            lowHealth = true
-        end
-    end
-
     if (ability.forceMeleeRangeCheck) then
         local meleeRange = IsSpellInRange("Tiger Palm", "target")
         if (meleeRange == nil or meleeRange < 1) then
@@ -120,15 +109,27 @@ function Rotation:AbilityReady(ability)
         end
     end
 
-    if (ability.checkEnergy) then
-        if (energy < (energyMax + ability.energyMaxOffset)) then
+    if (ability.checkHealthLevel) then
+        local health = UnitHealth("player")
+        local healthMax = UnitHealthMax("player")
+        local healthCheck = self:ConditionalCheck(health, healthMax, ability.checkHealthLevel, ability.healthOp, true)
+        if(healthCheck) then
+            lowHealth = true
+        end
+    end
+
+    if (ability.checkEnergyLevel) then
+      local energyCheck = self:ConditionalCheck(energy, energyMax, ability.energyLevel, ability.energyOp, true)
+        if(not energyCheck) then
             energyGood = false
         end
     end
 
-    if (ability.checkChi) then
-        if (chi <= (chiMax + ability.chiMaxOffset)) then
-            chiGood = true
+    if (ability.checkChiLevel) then
+        local chiCheck = self:ConditionalCheck(chi, chiMax, ability.chiLevel, ability.chiOp, false)
+        
+        if(not chiCheck) then
+            chiGood = false
         end
     end
 
@@ -148,6 +149,41 @@ function Rotation:AbilityReady(ability)
     end
 
     return ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healingSpell, lowHealth
+end
+
+function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, targetOp, isPercentage)
+    local playerPropLevel = playerLevel --math.floor((playerProp / playerPropMax) * 100)
+    local targetPropLevel = targetLevel --(targetLevel * 100)
+
+    if(isPercentage) then
+        playerPropLevel = math.floor((playerPropLevel / playerMaxLevel) * 100)
+        targetPropLevel = targetLevel * 100
+    end
+
+    local conditionMatched = false
+    if(targetOp == "=") then
+        if(playerPropLevel == targetPropLevel) then
+            conditionMatched = true
+        end
+    elseif(targetOp == ">") then
+        if(playerPropLevel > targetPropLevel) then
+            conditionMatched = true
+        end
+    elseif(targetOp == "<") then
+        if(playerPropLevel < targetPropLevel) then
+            conditionMatched = true
+        end
+    elseif(targetOp == ">=") then
+        if(playerPropLevel >= targetPropLevel) then
+            conditionMatched = true
+        end
+    elseif(targetOp == "<=") then
+        if(playerPropLevel <= targetPropLevel) then
+            conditionMatched = true
+        end
+    end
+
+    return conditionMatched
 end
 
 function Rotation:CheckAbilities(abilityPool, lastCheckedBtn, frames, glowColor, typeName)
