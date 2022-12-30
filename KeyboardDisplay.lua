@@ -51,6 +51,10 @@ function KeyboardDisplay:InitializeIconGrid(keyboard)
     self:InitializeFrames()
 end
 
+function KeyboardDisplay:UpdateTextures()
+
+end
+
 function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, offsetX, offsetY, pframe)
     local spellTexture
     if (spellId) then
@@ -61,28 +65,32 @@ function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, 
 
     if not btnFrame then
         btnFrame = CreateFrame("Frame", pframe, nil, nil, nil)
+        btnFrame:SetMovable(true)
+        btnFrame:SetClampedToScreen(true)
+        btnFrame:EnableMouse(true)
+        btnFrame:SetSize(15, 15)
+        btnFrame:SetFrameStrata("MEDIUM")
+        btnFrame:SetFrameLevel(52)
+        btnFrame:SetPoint(point, relativeTo, relativePoint, offsetX, offsetY)
+
     end
 
-    btnFrame:SetMovable(true)
-    btnFrame:SetClampedToScreen(true)
-    btnFrame:EnableMouse(true)
-    btnFrame:SetSize(15, 15)
-    btnFrame:SetFrameStrata("MEDIUM")
-    btnFrame:SetFrameLevel(52)
-    btnFrame:SetPoint(point, relativeTo, relativePoint, offsetX, offsetY)
     local icon = btnFrame.iconart
     if not icon then
         icon = btnFrame:CreateTexture("IconArt", "ARTWORK")
-        if (spellId == nil) then
-            icon:SetColorTexture(0, 0, 0, .3)
-        else
-            icon:SetTexture(spellTexture)
-        end
+
 
         icon:SetBlendMode("BLEND")
-        btnFrame.iconart = icon
+
+        icon:SetAllPoints(btnFrame)
     end
-    icon:SetAllPoints(btnFrame)
+
+    if (spellId == nil) then
+        icon:SetColorTexture(0, 0, 0, .3)
+    else
+        icon:SetTexture(spellTexture)
+    end
+    btnFrame.iconart = icon
 
     local overlay = btnFrame.overlay;
     if not overlay then
@@ -90,8 +98,9 @@ function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, 
         overlay:SetColorTexture(1, 1, 1, 0)
         overlay:SetBlendMode("BLEND")
         btnFrame.overlay = overlay
+        overlay:SetAllPoints(btnFrame)
     end
-    overlay:SetAllPoints(btnFrame)
+
 
     return btnFrame
 end

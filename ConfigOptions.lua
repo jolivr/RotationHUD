@@ -95,7 +95,7 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
         optionArgs[i] = nil
     end
 
-   local checkSection = {
+    local checkSection = {
         name = "check " .. abilityType,
         type = "toggle",
         order = 1,
@@ -177,7 +177,7 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                             width = .6,
                             get = function() return priority.checkEnergyLevel end,
                             set = function(_, val) priority.checkEnergyLevel = val end
-                        }, 
+                        },
                         checkChi = {
                             name = "check chi",
                             type = "toggle",
@@ -201,15 +201,15 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                     type = "group",
                     inline = true,
                     hidden = function() return not priority.checkEnergyLevel end,
-                    args = {                   
+                    args = {
                         energyOp = {
                             name = "operation",
                             type = "select",
-                            
+
                             values = {
-                                ["="] = "=" ,
-                                ["<"] = "<" ,
-                                [">"] = ">" ,
+                                ["="] = "=",
+                                ["<"] = "<",
+                                [">"] = ">",
                                 ["<="] = "<=",
                                 [">="] = ">="
                             },
@@ -241,9 +241,9 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                             name = "operation",
                             type = "select",
                             values = {
-                                ["="] = "=" ,
-                                ["<"] = "<" ,
-                                [">"] = ">" ,
+                                ["="] = "=",
+                                ["<"] = "<",
+                                [">"] = ">",
                                 ["<="] = "<=",
                                 [">="] = ">="
                             },
@@ -274,9 +274,9 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                             name = "operation",
                             type = "select",
                             values = {
-                                ["="] = "=" ,
-                                ["<"] = "<" ,
-                                [">"] = ">" ,
+                                ["="] = "=",
+                                ["<"] = "<",
+                                [">"] = ">",
                                 ["<="] = "<=",
                                 [">="] = ">="
                             },
@@ -304,7 +304,7 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
         }
 
         optionArgs[tostring(index)] = prioritySection
-        
+
     end
     -- end
     local addNewPrioritySection = {
@@ -321,7 +321,7 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                 imageWidth = 40,
                 func = function()
                     --self:PopulateSpells(abilityType, optionArgs, priorityList)
-                    local functionArgs = {abilityType, optionArgs, priorityList}
+                    local functionArgs = { abilityType, optionArgs, priorityList }
                     local addFunc = function() ConfigOptions:AddPriority(functionArgs) end
                     self:PopulateSpells(addFunc, functionArgs)
                 end,
@@ -357,18 +357,18 @@ function ConfigOptions:CreateKeyboardLayoutSection()
             end
 
             local btnSection = {
-                    name = "",
-                    type = "execute",
-                    image = GetSpellTexture(spellId),
-                    imageHeight = 40,
-                    imageWidth = 40,
-                    func = function()
-                        local functionArgs = {rowName .. btnName}
-                        local modFunc = function() ConfigOptions:ModifyButtonLayout(functionArgs) end
-                        self:PopulateSpells(modFunc, functionArgs)
-                    end,
-                    order = btnIndex,
-                    width = .40
+                name = "",
+                type = "execute",
+                image = GetSpellTexture(spellId),
+                imageHeight = 40,
+                imageWidth = 40,
+                func = function()
+                    local functionArgs = { rowName .. btnName }
+                    local modFunc = function() ConfigOptions:ModifyButtonLayout(functionArgs) end
+                    self:PopulateSpells(modFunc, functionArgs)
+                end,
+                order = btnIndex,
+                width = .40
             }
             btnSections[rowName .. btnName] = btnSection
         end
@@ -414,12 +414,11 @@ function ConfigOptions:ModifyButtonLayout(priorityArgs)
     self.Keyboard.AbilityMappings[btnId] = Abilities.Monk.AbilityLookup[spellId]
     ConfigRegistry:NotifyChange("RoHUD");
     self:CreateKeyboardLayoutSection()
-    -- change this to just modifying the texture
-   -- KeyboardDisplay:InitializeIconGrid(self.Keyboard)
+    KeyboardDisplay:InitializeIconGrid(self.Keyboard)
     spellListFrame:Hide()
 end
 
---type, args, priorityList, 
+--type, args, priorityList,
 function ConfigOptions:PopulateSpells(callbackFunc, callbackArgs)
     local spellList = {}
     local index = 1
@@ -448,7 +447,7 @@ function ConfigOptions:PopulateSpells(callbackFunc, callbackArgs)
                 if not IsPassiveSpell(n, "spell") then
                     local spellName, _, spellIcon, _, _, _, spellId = GetSpellInfo(n, "spell")
                     --and self.MasterPriorityList[spellId] == nil
-                    if spellName ~= nil  then
+                    if spellName ~= nil then
                         spellList[index] = { name = spellName, icon = spellIcon, id = spellId }
                         index = index + 1
                     end
@@ -466,8 +465,8 @@ function ConfigOptions:PopulateSpells(callbackFunc, callbackArgs)
         addIcon:SetImageSize(36, 36)
         addIcon:SetLabel(spell.name)
         addIcon:SetCallback("OnClick", function()
-            tinsert(callbackArgs,spell.id)
-            callbackFunc(callbackArgs)--ConfigOptions:AddPriority(spell.id, type, args, priorityList)
+            tinsert(callbackArgs, spell.id)
+            callbackFunc(callbackArgs) --ConfigOptions:AddPriority(spell.id, type, args, priorityList)
         end)
         specIconList:AddChild(addIcon)
     end
