@@ -1,6 +1,7 @@
 local RotationHUD, Rotation = ...
 local RotationHUD, KeyboardSettings = ...
 local RotationHUD, KeyboardDisplay = ...
+local RotationHUD, Abilities = ...
 
 Rotation.PrevDamageButton = {}
 Rotation.PrevDefenseButton = {}
@@ -84,7 +85,9 @@ function Rotation:AbilityReady(ability)
     local energy, energyMax = self:PlayerPower('Energy');
     local cd, MaxCd = self:GetCooldown(spellId)
     local onCooldown = false
-    local inRange = IsSpellInRange(spellId, "target")
+    local spell = Spell:CreateFromSpellID(spellId)
+    local spellName = spell:GetSpellName()
+    local inRange = IsSpellInRange(spellName, "target")
     local energyGood = true
     local chiGood = true
     local healthGood = true
@@ -98,8 +101,8 @@ function Rotation:AbilityReady(ability)
         onCooldown = true
     end
 
-    if (inRange == nil) then
-        inRange = true
+    if (inRange == 0 or inRange == nil) then
+        inRange = false
     end
     if (ability.forceMeleeRangeCheck) then
         local meleeRange = IsSpellInRange("Tiger Palm", "target")
@@ -227,7 +230,6 @@ function Rotation:CheckInterrupt()
     local name, _, _, _, _, _, _, notInterruptible, _ = UnitCastingInfo("target")
     local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
     if (not notInterruptible and self:AbilityReady(self.InterruptAbility)) then
-        print(name, " is interruptible!")
         KeyboardDisplay:ShowGlow(btnFrame, self.Colors.Pink)
     else
         KeyboardDisplay:HideGlow(btnFrame)

@@ -52,8 +52,8 @@ Abilities.Monk = {
     }
 }
 
-Abilities.Monk.AbilityNameLookup = { showConditions = false, }
-Abilities.Monk.AbilityLookup = { showConditions = false, }
+Abilities.Monk.AbilityNameLookup = {}
+Abilities.Monk.AbilityLookup = {}
 for name, ability in pairs(Abilities.Monk.Windwalker) do
     Abilities.Monk.AbilityNameLookup[ability.spellId] = name
     Abilities.Monk.AbilityLookup[ability.spellId] = ability
