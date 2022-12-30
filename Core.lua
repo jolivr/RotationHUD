@@ -17,7 +17,7 @@ RoHUD.defaultOptions = {
         healingPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
         minimap = { hide = false },
         keyboard = KeyboardSettings.G13,
-        
+
     }
 }
 
@@ -27,7 +27,7 @@ function RoHUD:OnInitialize()
 
     ConfigOptions:InitializeRegistry()
     self:CreateMiniMapButton()
-    
+
     self:Print("Rotation HUD Initialized")
 end
 
@@ -91,8 +91,10 @@ end
 
 function RoHUD:PLAYER_TARGET_CHANGED()
     if (UnitCanAttack("player", "target")) then
-        self:StartTimers()
-        KeyboardDisplay:ShowGrid(healthBarFrame)
+        C_Timer.After(0.1, function()
+            self:StartTimers()
+            KeyboardDisplay:ShowGrid(healthBarFrame)
+        end)
     else
         self:CancelTimers()
         KeyboardDisplay:HideGrid(healthBarFrame)

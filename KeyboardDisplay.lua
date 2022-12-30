@@ -51,10 +51,6 @@ function KeyboardDisplay:InitializeIconGrid(keyboard)
     self:InitializeFrames()
 end
 
-function KeyboardDisplay:UpdateTextures()
-
-end
-
 function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, offsetX, offsetY, pframe)
     local spellTexture
     if (spellId) then
@@ -128,7 +124,6 @@ function KeyboardDisplay:AttachToNamePlate(healthBarFrame)
     local plate = C_NamePlate.GetNamePlateForUnit("target")
     local keyBtn = _G["Row1Button1"]
     local yOfs = 0
-
     if (plate) then
         if (not plate:IsVisible()) then
             yOfs = -300
