@@ -101,7 +101,10 @@ function Rotation:AbilityReady(ability)
         onCooldown = true
     end
 
-    if (inRange == 0 or inRange == nil) then
+    if(inRange == nil)then
+        inRange = true
+    end
+    if (inRange == 0) then
         inRange = false
     end
     if (ability.forceMeleeRangeCheck) then
