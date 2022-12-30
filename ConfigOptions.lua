@@ -164,140 +164,163 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                     order = 4,
                     width = .4
                 },
-                toggleSection = {
-                    name = "",
-                    type = "group",
-                    inline = true,
-                    order = 5,
-                    args = {
-                        checkEnergy = {
-                            name = "check energy",
-                            type = "toggle",
-                            order = 1,
-                            width = .6,
-                            get = function() return priority.checkEnergyLevel end,
-                            set = function(_, val) priority.checkEnergyLevel = val end
-                        },
-                        checkChi = {
-                            name = "check chi",
-                            type = "toggle",
-                            order = 1,
-                            width = .6,
-                            get = function() return priority.checkChiLevel end,
-                            set = function(_, val) priority.checkChiLevel = val end
-                        },
-                        checkHealth = {
-                            name = "check health",
-                            type = "toggle",
-                            order = 1,
-                            width = .6,
-                            get = function() return priority.checkHealthLevel end,
-                            set = function(_, val) priority.checkHealthLevel = val end
-                        },
-                    }
-                },
-                energySection = {
-                    name = "energy",
-                    type = "group",
-                    inline = true,
-                    hidden = function() return not priority.checkEnergyLevel end,
-                    args = {
-                        energyOp = {
-                            name = "operation",
-                            type = "select",
+                showConditions = {
+                    name = function() 
+                        local name = "Setup conditions"
+                        if(priority.checkEnergyLevel or priority.checkChiLevel or priority.checkHealthLevel) then
+                            name = "\124cFF00FF00See existing conditions\124r"
+                        end
 
-                            values = {
-                                ["="] = "=",
-                                ["<"] = "<",
-                                [">"] = ">",
-                                ["<="] = "<=",
-                                [">="] = ">="
-                            },
-                            width = .4,
-                            order = 2,
-                            get = function() return priority.energyOp end,
-                            set = function(_, val) priority.energyOp = val end
-                        },
-                        energyLevel = {
-                            name = "energy %",
-                            type = "range",
-                            min = 0,
-                            max = 1,
-                            step = .1,
-                            isPercent = true,
-                            order = 3,
-                            get = function() return priority.energyLevel end,
-                            set = function(_, val) priority.energyLevel = val end
-                        }
-                    }
+                        return name
+                     end,
+                    type = "toggle",
+                    order = 5,
+                    get = function() return priority.showConditions end,
+                    set = function(_, val) priority.showConditions = val end
                 },
-                chiSection = {
-                    name = "chi",
+                conditionsSection = {
+                    name = "conditions",
                     type = "group",
-                    inline = true,
-                    hidden = function() return not priority.checkChiLevel end,
+                    order = 6,
+                    hidden = function() return not priority.showConditions end,
                     args = {
-                        chiOp = {
-                            name = "operation",
-                            type = "select",
-                            values = {
-                                ["="] = "=",
-                                ["<"] = "<",
-                                [">"] = ">",
-                                ["<="] = "<=",
-                                [">="] = ">="
-                            },
-                            width = .4,
-                            order = 2,
-                            get = function() return priority.chiOp end,
-                            set = function(_, val) priority.chiOp = val end
+                        toggleSection = {
+                            name = "",
+                            type = "group",
+                            inline = true,
+                            order = 5,
+                            args = {
+                                checkEnergy = {
+                                    name = "check energy",
+                                    type = "toggle",
+                                    order = 1,
+                                    width = .6,
+                                    get = function() return priority.checkEnergyLevel end,
+                                    set = function(_, val) priority.checkEnergyLevel = val end
+                                },
+                                checkChi = {
+                                    name = "check chi",
+                                    type = "toggle",
+                                    order = 1,
+                                    width = .6,
+                                    get = function() return priority.checkChiLevel end,
+                                    set = function(_, val) priority.checkChiLevel = val end
+                                },
+                                checkHealth = {
+                                    name = "check health",
+                                    type = "toggle",
+                                    order = 1,
+                                    width = .6,
+                                    get = function() return priority.checkHealthLevel end,
+                                    set = function(_, val) priority.checkHealthLevel = val end
+                                },
+                            }
                         },
-                        chiLevel = {
+                        energySection = {
+                            name = "energy",
+                            type = "group",
+                            inline = true,
+                            hidden = function() return not priority.checkEnergyLevel end,
+                            args = {
+                                energyOp = {
+                                    name = "operation",
+                                    type = "select",
+
+                                    values = {
+                                        ["="] = "=",
+                                        ["<"] = "<",
+                                        [">"] = ">",
+                                        ["<="] = "<=",
+                                        [">="] = ">="
+                                    },
+                                    width = .4,
+                                    order = 2,
+                                    get = function() return priority.energyOp end,
+                                    set = function(_, val) priority.energyOp = val end
+                                },
+                                energyLevel = {
+                                    name = "energy %",
+                                    type = "range",
+                                    min = 0,
+                                    max = 1,
+                                    step = .1,
+                                    isPercent = true,
+                                    order = 3,
+                                    get = function() return priority.energyLevel end,
+                                    set = function(_, val) priority.energyLevel = val end
+                                }
+                            }
+                        },
+                        chiSection = {
                             name = "chi",
-                            type = "range",
-                            min = 0,
-                            max = 6,
-                            step = 1,
-                            order = 3,
-                            get = function() return priority.chiLevel end,
-                            set = function(_, val) priority.chiLevel = val end
-                        }
-                    }
-                },
-                healthSection = {
-                    name = "health",
-                    type = "group",
-                    inline = true,
-                    hidden = function() return not priority.checkHealthLevel end,
-                    args = {
-                        healthOp = {
-                            name = "operation",
-                            type = "select",
-                            values = {
-                                ["="] = "=",
-                                ["<"] = "<",
-                                [">"] = ">",
-                                ["<="] = "<=",
-                                [">="] = ">="
-                            },
-                            width = .4,
-                            order = 2,
-                            get = function() return priority.healthOp end,
-                            set = function(_, val) priority.healthOp = val end
+                            type = "group",
+                            inline = true,
+                            hidden = function() return not priority.checkChiLevel end,
+                            args = {
+                                chiOp = {
+                                    name = "operation",
+                                    type = "select",
+                                    values = {
+                                        ["="] = "=",
+                                        ["<"] = "<",
+                                        [">"] = ">",
+                                        ["<="] = "<=",
+                                        [">="] = ">="
+                                    },
+                                    width = .4,
+                                    order = 2,
+                                    get = function() return priority.chiOp end,
+                                    set = function(_, val) priority.chiOp = val end
+                                },
+                                chiLevel = {
+                                    name = "chi",
+                                    type = "range",
+                                    min = 0,
+                                    max = 6,
+                                    step = 1,
+                                    order = 3,
+                                    get = function() return priority.chiLevel end,
+                                    set = function(_, val) priority.chiLevel = val end
+                                }
+                            }
                         },
-                        healthLevel = {
+                        healthSection = {
                             name = "health",
-                            type = "range",
-                            min = 0,
-                            max = 1,
-                            step = .1,
-                            isPercent = true,
-                            order = 3,
-                            get = function() return priority.healthLevel end,
-                            set = function(_, val) priority.healthLevel = val end
+                            type = "group",
+                            inline = true,
+                            hidden = function() return not priority.checkHealthLevel end,
+                            args = {
+                                healthOp = {
+                                    name = "operation",
+                                    type = "select",
+                                    values = {
+                                        ["="] = "=",
+                                        ["<"] = "<",
+                                        [">"] = ">",
+                                        ["<="] = "<=",
+                                        [">="] = ">="
+                                    },
+                                    width = .4,
+                                    order = 2,
+                                    get = function() return priority.healthOp end,
+                                    set = function(_, val) priority.healthOp = val end
+                                },
+                                healthLevel = {
+                                    name = "health",
+                                    type = "range",
+                                    min = 0,
+                                    max = 1,
+                                    step = .1,
+                                    isPercent = true,
+                                    order = 3,
+                                    get = function() return priority.healthLevel end,
+                                    set = function(_, val) priority.healthLevel = val end
+                                }
+                            }
                         }
                     }
                 }
+
 
 
             }

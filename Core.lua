@@ -16,7 +16,8 @@ RoHUD.defaultOptions = {
         cooldownPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
         healingPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
         minimap = { hide = false },
-        keyboard = KeyboardSettings.G13
+        keyboard = KeyboardSettings.G13,
+        
     }
 }
 
