@@ -7,6 +7,7 @@ local Icon = LibStub("LibDBIcon-1.0")
 local ConfigDB = LibStub("AceDB-3.0")
 local healthBarFrame = {}
 local cdTimers = {}
+local rotationTimer = {}
 
 RoHUD = LibStub('AceAddon-3.0'):NewAddon('RoHUD', 'AceConsole-3.0', 'AceEvent-3.0', 'AceTimer-3.0');
 
@@ -59,11 +60,13 @@ function RoHUD:PriorityRotationTimer()
 end
 
 function RoHUD:StartRotationTimer()
-    self:ScheduleRepeatingTimer("PriorityRotationTimer", .25)
+    print("starting timer")
+    rotationTimer = self:ScheduleRepeatingTimer("PriorityRotationTimer", .25)
 end
 
 function RoHUD:CancelRotationTimer()
-    self:CancelTimer("PriorityRotationTimer")
+    print("stopping timer")
+    self:CancelTimer(rotationTimer)
 end
 
 function RoHUD:CreateMiniMapButton()
@@ -135,7 +138,7 @@ end
 
 function RoHUD:CooldownTimer(spellId)
     local cooldownms, gcdms = GetSpellBaseCooldown(spellId)
-    print("timer for " , spellId, " gcd: ", gcdms)
+   -- print("timer for " , spellId, " gcd: ", gcdms)
    -- print("Cooldown: ", cooldownms / 1000, "GCD cooldown: ", gcdms)
     local start, duration, enabled, modRate = GetSpellCooldown(spellId)
     local timeLeft = ceil(start + duration - GetTime())
@@ -143,7 +146,7 @@ function RoHUD:CooldownTimer(spellId)
         timeLeft = timeLeft - (gcdms / 1000)
     end
     if(timeLeft >= 0) then
-        print("spellid: ", spellId, " time left: ", timeLeft)
+       -- print("spellid: ", spellId, " time left: ", timeLeft)
         KeyboardDisplay:ShowCooldown(spellId, timeLeft)
     else
         local frameName = KeyboardSettings.AbilityMapping[spellId]

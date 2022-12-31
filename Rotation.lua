@@ -127,61 +127,21 @@ function Rotation:AbilityReady(ability)
         end
     end
 
-    if (inRange == 0 or inRange == nil) then
-        inRange = false
-    end
-
-    if(spellName == "Expel Harm") then
-        print(spellName, " 1. inRange: ", inRange)
-    end
-
-    if(spellName == "Expel Harm") then
-        print(spellName, " 2. minSpellRange: ", minRange, ", maxRange: ", maxRange)
-    end
-
     local _, targetMax = rangeCheck:GetRange('target')
 
-    if(spellName == "Expel Harm") then
-        print(spellName, " 3. targetMax: ", targetMax)
-    end
-    if (not inRange) then -- if "not in range" take a closer look
-        --if (known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood) then
-            
-
-
-
-            if (minRange == 0 and maxRange == 0) then --spell does not depend on range
-                inRange = true
-            else
-                if (targetMax) then --if target range can be estimated
-
-
-
-                    if (maxRange > 0 and targetMax <= maxRange) then --range check
-                        inRange = true
-                    else -- problem child
-                        print("")
-                        print("...")
-                        print(spellName, " is still nil")
-                        print("spell range: ", minRange, " - ", maxRange)
-                        print("target range: ", targetMax)
-                        print("...")
-                        print("")
-                    end
+    if (inRange == nil) then -- if "not in range" take a closer look
+            if (targetMax) then --if target range can be estimated
+                if (maxRange > 0 and targetMax <= maxRange) then --range check
+                    inRange = true
+                else -- problem child
+                    inRange = true
                 end
             end
-        --end
-    end
-    if(spellName == "Expel Harm") then
-        print(spellName, " 4. inRange: ", inRange)
     end
 
-    -- if (ability.forceMeleeRangeCheck) then
-    --     local meleeRange = IsSpellInRange("Tiger Palm", "target")
-    --     if (meleeRange == nil or meleeRange < 1) then
-    --         inRange = false
-    --     end
-    -- end
+    if(inRange == 0) then
+        inRange = false
+    end
 
     if (
         known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood and inRange and healthGood
@@ -246,13 +206,13 @@ function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor
                     KeyboardDisplay:Saturate(btn)
                     tinsert(readyButtons, btn)
                 else
-                    if (notEnoughPower or not energyGood or not chiGood) then
-                        KeyboardDisplay:Desaturate(btn)
-                    elseif (not inRange) then
-                        KeyboardDisplay:Desaturate(btn)
+                    KeyboardDisplay:Desaturate(btn)
+                    if (not inRange) then
                         KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Red)
-
+                    else
+                        KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Clear)
                     end
+                    
                 end
             end
         end
