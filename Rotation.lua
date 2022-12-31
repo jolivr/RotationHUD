@@ -88,6 +88,8 @@ function Rotation:AbilityReady(ability)
     local spell = Spell:CreateFromSpellID(spellId)
     local spellName = spell:GetSpellName()
     local inRange = IsSpellInRange(spellName, "target")
+    local rangeCheck = LibStub("LibRangeCheck-2.0")
+    local _, _, _, _, minRange, maxRange = GetSpellInfo(spellId)
     local energyGood = true
     local chiGood = true
     local healthGood = true
@@ -101,45 +103,82 @@ function Rotation:AbilityReady(ability)
         onCooldown = true
     end
 
-    if(inRange == nil)then
-        inRange = true
-    end
-    if (inRange == 0) then
-        inRange = false
-    end
-    if (ability.forceMeleeRangeCheck) then
-        local meleeRange = IsSpellInRange("Tiger Palm", "target")
-        if (meleeRange == nil or meleeRange < 1) then
-            inRange = false
-        end
-    end
-
     if (ability.checkHealthLevel) then
         local health = UnitHealth("player")
         local healthMax = UnitHealthMax("player")
         local healthCheck = self:ConditionalCheck(health, healthMax, ability.healthLevel, ability.healthOp, true)
-        if(not healthCheck) then
+        if (not healthCheck) then
             healthGood = false
         end
     end
 
     if (ability.checkEnergyLevel) then
-      local energyCheck = self:ConditionalCheck(energy, energyMax, ability.energyLevel, ability.energyOp, true)
-        if(not energyCheck) then
+        local energyCheck = self:ConditionalCheck(energy, energyMax, ability.energyLevel, ability.energyOp, true)
+        if (not energyCheck) then
             energyGood = false
         end
     end
 
     if (ability.checkChiLevel) then
         local chiCheck = self:ConditionalCheck(chi, chiMax, ability.chiLevel, ability.chiOp, false)
-        
-        if(not chiCheck) then
+
+        if (not chiCheck) then
             chiGood = false
         end
     end
 
+    if (inRange == 0) then
+        inRange = false
+    end
+
+    -- if(spellName == "Expel Harm") then
+    --     print(spellName, " 1. inRange: ", inRange)
+    -- end
+
+    if (not inRange) then -- if "not in range" take a closer look
+        if ((known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood) and inRange == nil) then
+            local _, targetMax = rangeCheck:GetRange('target')
+
+            -- if(spellName == "Expel Harm") then
+            --     print(spellName, " 2. minSpellRange: ", minRange, ", maxRange: ", maxRange)
+            -- end
+
+            if (minRange == 0 and maxRange == 0) then --spell does not depend on range
+                inRange = true
+            else
+                if (targetMax) then --if target range can be estimated
+
+                    -- if(spellName == "Expel Harm") then
+                    --     print(spellName, " 3. targetMax: ", targetMax)
+                    -- end
+
+                    if (maxRange > 0 and targetMax <= maxRange) then --range check
+                        inRange = true
+                    else -- problem child
+                        print("")
+                        print("...")
+                        print(spellName, " is still nil")
+                        print("spell range: ", minRange, " - ", maxRange)
+                        print("target range: ", targetMax)
+                        print("...")
+                        print("")
+                    end
+                end
+            end
+        end
+    end
+
+
+    -- if (ability.forceMeleeRangeCheck) then
+    --     local meleeRange = IsSpellInRange("Tiger Palm", "target")
+    --     if (meleeRange == nil or meleeRange < 1) then
+    --         inRange = false
+    --     end
+    -- end
+
     if (
-        known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood and inRange and healthGood and
+        known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood and inRange and healthGood
+            and
             not justClicked
         ) then
         ready = true
@@ -152,30 +191,30 @@ function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, tar
     local playerPropLevel = playerLevel --math.floor((playerProp / playerPropMax) * 100)
     local targetPropLevel = targetLevel --(targetLevel * 100)
 
-    if(isPercentage) then
+    if (isPercentage) then
         playerPropLevel = math.floor((playerPropLevel / playerMaxLevel) * 100)
         targetPropLevel = targetLevel * 100
     end
 
     local conditionMatched = false
-    if(targetOp == "=") then
-        if(playerPropLevel == targetPropLevel) then
+    if (targetOp == "=") then
+        if (playerPropLevel == targetPropLevel) then
             conditionMatched = true
         end
-    elseif(targetOp == ">") then
-        if(playerPropLevel > targetPropLevel) then
+    elseif (targetOp == ">") then
+        if (playerPropLevel > targetPropLevel) then
             conditionMatched = true
         end
-    elseif(targetOp == "<") then
-        if(playerPropLevel < targetPropLevel) then
+    elseif (targetOp == "<") then
+        if (playerPropLevel < targetPropLevel) then
             conditionMatched = true
         end
-    elseif(targetOp == ">=") then
-        if(playerPropLevel >= targetPropLevel) then
+    elseif (targetOp == ">=") then
+        if (playerPropLevel >= targetPropLevel) then
             conditionMatched = true
         end
-    elseif(targetOp == "<=") then
-        if(playerPropLevel <= targetPropLevel) then
+    elseif (targetOp == "<=") then
+        if (playerPropLevel <= targetPropLevel) then
             conditionMatched = true
         end
     end
@@ -184,7 +223,7 @@ function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, tar
 end
 
 function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor, typeName)
-    if(not priorityList.check) then
+    if (not priorityList.check) then
         return
     end
 
@@ -200,11 +239,12 @@ function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor
                     KeyboardDisplay:Saturate(btn)
                     tinsert(readyButtons, btn)
                 else
-                    if (not inRange) then
+                    if (notEnoughPower or not energyGood or not chiGood) then
+                        KeyboardDisplay:Desaturate(btn)
+                    elseif (not inRange) then
                         KeyboardDisplay:Desaturate(btn)
                         KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Red)
-                    elseif (notEnoughPower or not energyGood or not chiGood) then
-                        KeyboardDisplay:Desaturate(btn)
+
                     end
                 end
             end
@@ -245,11 +285,3 @@ function Rotation:ClearPreviousButtons()
     Rotation.PrevCooldownButton = {}
     Rotation.PrevHealingButton = {}
 end
-
-
-
-
-
-
-
-
