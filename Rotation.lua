@@ -127,30 +127,35 @@ function Rotation:AbilityReady(ability)
         end
     end
 
-    if (inRange == 0) then
+    if (inRange == 0 or inRange == nil) then
         inRange = false
     end
 
-    -- if(spellName == "Expel Harm") then
-    --     print(spellName, " 1. inRange: ", inRange)
-    -- end
+    if(spellName == "Expel Harm") then
+        print(spellName, " 1. inRange: ", inRange)
+    end
 
+    if(spellName == "Expel Harm") then
+        print(spellName, " 2. minSpellRange: ", minRange, ", maxRange: ", maxRange)
+    end
+
+    local _, targetMax = rangeCheck:GetRange('target')
+
+    if(spellName == "Expel Harm") then
+        print(spellName, " 3. targetMax: ", targetMax)
+    end
     if (not inRange) then -- if "not in range" take a closer look
-        if ((known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood) and inRange == nil) then
-            local _, targetMax = rangeCheck:GetRange('target')
+        --if (known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood) then
+            
 
-            -- if(spellName == "Expel Harm") then
-            --     print(spellName, " 2. minSpellRange: ", minRange, ", maxRange: ", maxRange)
-            -- end
+
 
             if (minRange == 0 and maxRange == 0) then --spell does not depend on range
                 inRange = true
             else
                 if (targetMax) then --if target range can be estimated
 
-                    -- if(spellName == "Expel Harm") then
-                    --     print(spellName, " 3. targetMax: ", targetMax)
-                    -- end
+
 
                     if (maxRange > 0 and targetMax <= maxRange) then --range check
                         inRange = true
@@ -165,9 +170,11 @@ function Rotation:AbilityReady(ability)
                     end
                 end
             end
-        end
+        --end
     end
-
+    if(spellName == "Expel Harm") then
+        print(spellName, " 4. inRange: ", inRange)
+    end
 
     -- if (ability.forceMeleeRangeCheck) then
     --     local meleeRange = IsSpellInRange("Tiger Palm", "target")

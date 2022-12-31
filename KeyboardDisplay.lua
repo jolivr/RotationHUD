@@ -99,6 +99,14 @@ function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, 
         overlay:SetAllPoints(btnFrame)
     end
 
+    local textOverlay = btnFrame.textOverlay
+    if not textOverlay then
+        textOverlay = btnFrame:CreateFontString("TextOverlay", "OVERLAY")
+        textOverlay:SetFontObject("GameTooltipTextSmall")
+        textOverlay:SetPoint("CENTER", 0,0)
+
+        btnFrame.textOverlay = textOverlay
+    end
 
     return btnFrame
 end
@@ -222,7 +230,8 @@ function KeyboardDisplay:ShowButtonClick(btnFrame)
     if (frame) then
         if (frame.overlay) then
             frame.overlay:SetAlpha(1)
-            frame.overlay:SetColorTexture(r, g, b, .8)
+            frame.overlay:SetColorTexture(r, g, b, 1)
+
         end
     end
 end
@@ -247,8 +256,8 @@ function KeyboardDisplay:HandleSpellCastChannelStart(spellId)
         self:HideAllGlows(self.DefenseFrames)
         self:HideAllGlows(self.CooldownFrames)
         self:HideAllGlows(self.HealingFrames)
-        local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
-        self:HideGlow(btnFrame)
+        -- local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
+        -- self:HideGlow(btnFrame)
         self:ShowButtonClick(frame)
     end
 end
@@ -256,7 +265,6 @@ end
 function KeyboardDisplay:HandleSpellCastChannelStop(spellId)
     local frame = KeyboardSettings.AbilityMapping[spellId]
     if (frame) then
-        --startTimers()
         self:HideButtonClick(frame)
         self.Channeling = false
     end
@@ -271,9 +279,23 @@ function KeyboardDisplay:HandleSpellCastSucceeded(spellId)
             self:HideButtonClick(clickedBtn)
         end)
 
-        if (spellId == self.InterruptAbility.spellId) then
-            local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
-            self:HideGlow(btnFrame)
-        end
+        -- if (spellId == self.InterruptAbility.spellId) then
+        --     local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
+        --     self:HideGlow(btnFrame)
+        -- end
     end
+end
+
+function KeyboardDisplay:ShowCooldown(spellId, timeLeft)
+    local frameName = KeyboardSettings.AbilityMapping[spellId]
+    local frame = _G[frameName]
+    if(frame.textOverlay) then
+        if(timeLeft == 0) then
+            frame.textOverlay:SetText("")
+        else
+            frame.textOverlay:SetText(timeLeft)
+        end
+        
+    end
+    
 end
