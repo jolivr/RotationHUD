@@ -7,10 +7,12 @@ KeyboardDisplay.DamageFrames = {}
 KeyboardDisplay.DefenseFrames = {}
 KeyboardDisplay.CooldownFrames = {}
 KeyboardDisplay.HealingFrames = {}
+KeyboardDisplay.InterruptFrames = {}
 KeyboardDisplay.DamagePriorities = {}
 KeyboardDisplay.DefensePriorities = {}
 KeyboardDisplay.CooldownPriorities = {}
 KeyboardDisplay.HealingPriorities = {}
+KeyboardDisplay.InterruptPriorities = {}
 KeyboardDisplay.Channeling = false
 KeyboardDisplay.HealthBarFrame = {}
 
@@ -106,7 +108,7 @@ function KeyboardDisplay:InitializeFrames()
     KeyboardDisplay.DefenseFrames = KeyboardDisplay:LoadFrameList(self.DefensePriorities)
     KeyboardDisplay.CooldownFrames = KeyboardDisplay:LoadFrameList(self.CooldownPriorities)
     KeyboardDisplay.HealingFrames = KeyboardDisplay:LoadFrameList(self.HealingPriorities)
-    KeyboardDisplay.InterruptAbility = Abilities.Monk.Windwalker.SpearHandStrike
+    KeyboardDisplay.InterruptFrames = KeyboardDisplay:LoadFrameList(self.InterruptPriorities)
 end
 
 function KeyboardDisplay:LoadFrameList(priorityList)

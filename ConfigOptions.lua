@@ -16,6 +16,7 @@ ConfigOptions.DamagePriorities = {}
 ConfigOptions.DefensePriorities = {}
 ConfigOptions.CooldownPriorities = {}
 ConfigOptions.HealingPriorities = {}
+ConfigOptions.InterruptPriorities = {}
 ConfigOptions.MasterPriorityList = {}
 ConfigOptions.RoHUD = {}
 ConfigOptions.Keyboard = {}

@@ -7,8 +7,8 @@ Rotation.PrevDamageButton = {}
 Rotation.PrevDefenseButton = {}
 Rotation.PrevCooldownButton = {}
 Rotation.PrevHealingButton = {}
+Rotation.PrevInterruptButton = {}
 Rotation.LastClickedSpellId = 0
-Rotation.InterruptAbility = 0
 
 Rotation.EnergyList = {
     [0] = 'Mana',
