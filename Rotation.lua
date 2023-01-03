@@ -9,6 +9,7 @@ Rotation.PrevCooldownButton = {}
 Rotation.PrevHealingButton = {}
 Rotation.PrevInterruptButton = {}
 Rotation.LastClickedSpellId = 0
+Rotation.InterruptAbility = {}
 
 Rotation.EnergyList = {
     [0] = 'Mana',
@@ -94,6 +95,7 @@ function Rotation:AbilityReady(ability)
     local chiGood = true
     local healthGood = true
     local justClicked = false
+    local procCheckPassed = true
 
     if (self.LastClickedSpellId == spellId) then
         justClicked = true
@@ -127,26 +129,44 @@ function Rotation:AbilityReady(ability)
         end
     end
 
+    if (ability.checkProcs) then
+        local buffs = {}
+        for i = 1, 40 do
+            local name, icon, count, dispelType, duration, expirationTime, source, isStealable, nameplateShowPersonal,
+            spellId = UnitBuff("player", i);
+            if name then
+                buffs[name] = { spellId = spellId, stacks = count }
+            end
+        end
+        
+        for i, proc in pairs(ability.procList) do
+            if(not buffs[proc.name] or buffs[proc.name].stacks < proc.procStacks) then
+                procCheckPassed = false
+            end
+
+        end
+    end
+
     local _, targetMax = rangeCheck:GetRange('target')
 
     if (inRange == nil) then -- if "not in range" take a closer look
-            if (targetMax) then --if target range can be estimated
-                if (maxRange > 0 and targetMax <= maxRange) then --range check
-                    inRange = true
-                else -- problem child
-                    inRange = true
-                end
+        if (targetMax) then --if target range can be estimated
+            if (maxRange > 0 and targetMax <= maxRange) then --range check
+                inRange = true
+            else -- problem child
+                inRange = true
             end
+        end
     end
 
-    if(inRange == 0) then
+    if (inRange == 0) then
         inRange = false
     end
 
     if (
         known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood and inRange and healthGood
-            and
-            not justClicked
+            and procCheckPassed
+            --not justClicked
         ) then
         ready = true
     end
@@ -212,7 +232,7 @@ function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor
                     else
                         KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Clear)
                     end
-                    
+
                 end
             end
         end
@@ -239,8 +259,9 @@ end
 function Rotation:CheckInterrupt()
     local name, _, _, _, _, _, _, notInterruptible, _ = UnitCastingInfo("target")
     local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
+
     if (not notInterruptible and self:AbilityReady(self.InterruptAbility)) then
-        KeyboardDisplay:ShowGlow(btnFrame, self.Colors.Pink)
+        KeyboardDisplay:ShowGlow(btnFrame, KeyboardDisplay.Colors.Pink)
     else
         KeyboardDisplay:HideGlow(btnFrame)
     end

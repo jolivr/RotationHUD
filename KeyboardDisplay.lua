@@ -103,7 +103,7 @@ function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, 
     if not textOverlay then
         textOverlay = btnFrame:CreateFontString("TextOverlay", "OVERLAY")
         textOverlay:SetFontObject("GameTooltipTextSmall")
-        textOverlay:SetPoint("CENTER", 0,0)
+        textOverlay:SetPoint("CENTER", 0, 0)
 
         btnFrame.textOverlay = textOverlay
     end
@@ -116,7 +116,7 @@ function KeyboardDisplay:InitializeFrames()
     KeyboardDisplay.DefenseFrames = KeyboardDisplay:LoadFrameList(self.DefensePriorities)
     KeyboardDisplay.CooldownFrames = KeyboardDisplay:LoadFrameList(self.CooldownPriorities)
     KeyboardDisplay.HealingFrames = KeyboardDisplay:LoadFrameList(self.HealingPriorities)
-    KeyboardDisplay.InterruptFrames = KeyboardDisplay:LoadFrameList(self.InterruptPriorities)
+    -- KeyboardDisplay.InterruptFrames = KeyboardDisplay:LoadFrameList(self.InterruptPriorities)
 end
 
 function KeyboardDisplay:LoadFrameList(priorityList)
@@ -174,20 +174,19 @@ function KeyboardDisplay:Saturate(btnFrame)
     if not frame then
         frame = btnFrame
     end
-    local t = frame.iconart;
-    --print("saturate ", t:GetTexture())
-    t:SetDesaturated(false)
+    if (frame) then
+        local t = frame.iconart;
+        t:SetDesaturated(false)
+    end
+
 end
 
 function KeyboardDisplay:Desaturate(btnFrame)
     local frame = _G[btnFrame]
-    -- if not frame then
-    -- 	frame =btnFrame
-    -- end
-
-    local t = frame.iconart;
-    --print("desaturate ", t:GetTexture())
-    t:SetDesaturated(true)
+    if (frame) then
+        local t = frame.iconart;
+        t:SetDesaturated(true)
+    end
 end
 
 function KeyboardDisplay:SetColor(btnFrame, color)
@@ -289,13 +288,16 @@ end
 function KeyboardDisplay:ShowCooldown(spellId, timeLeft)
     local frameName = KeyboardSettings.AbilityMapping[spellId]
     local frame = _G[frameName]
-    if(frame.textOverlay) then
-        if(timeLeft == 0) then
-            frame.textOverlay:SetText("")
-        else
-            frame.textOverlay:SetText(timeLeft)
+
+    if (frame) then
+        if (frame.textOverlay) then
+            if (timeLeft == 0) then
+                frame.textOverlay:SetText("")
+            else
+                frame.textOverlay:SetText(timeLeft)
+            end
+
         end
-        
     end
-    
+
 end

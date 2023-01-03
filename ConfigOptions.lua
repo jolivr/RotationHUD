@@ -11,6 +11,10 @@ ConfigOptions.DamageArgs = {}
 ConfigOptions.DefenseArgs = {}
 ConfigOptions.CooldownArgs = {}
 ConfigOptions.HealingArgs = {}
+ConfigOptions.DamageProcArgs = {}
+ConfigOptions.DefenseProcArgs = {}
+ConfigOptions.CooldownProcArgs = {}
+ConfigOptions.HealingProcArgs = {}
 ConfigOptions.KeyboardLayoutArgs = {}
 ConfigOptions.DamagePriorities = {}
 ConfigOptions.DefensePriorities = {}
@@ -20,6 +24,7 @@ ConfigOptions.InterruptPriorities = {}
 ConfigOptions.MasterPriorityList = {}
 ConfigOptions.RoHUD = {}
 ConfigOptions.Keyboard = {}
+ConfigOptions.DebugFunc = {}
 
 ConfigOptions.Menu = {
     name = "Gamepad Icons - Windwalker",
@@ -74,6 +79,10 @@ ConfigOptions.Menu = {
 
 
 function ConfigOptions:Open()
+    local screenHeight = GetScreenHeight() * UIParent:GetEffectiveScale()
+    local screenWidth = GetScreenWidth() *  UIParent:GetEffectiveScale()
+
+    ConfigDialog:SetDefaultSize("RoHUD", screenWidth * .6, screenHeight * 1.6)
     ConfigDialog:Open("RoHUD")
     ConfigDialog:SelectGroup("RoHUD", "priorities", "damage")
 end
@@ -166,14 +175,14 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                     width = .4
                 },
                 showConditions = {
-                    name = function() 
+                    name = function()
                         local name = "Setup conditions"
-                        if(priority.checkEnergyLevel or priority.checkChiLevel or priority.checkHealthLevel) then
+                        if (priority.checkEnergyLevel or priority.checkChiLevel or priority.checkHealthLevel or priority.checkProcs) then
                             name = "\124cFF00FF00See existing conditions\124r"
                         end
 
                         return name
-                     end,
+                    end,
                     type = "toggle",
                     order = 5,
                     get = function() return priority.showConditions end,
@@ -215,6 +224,14 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                                     get = function() return priority.checkHealthLevel end,
                                     set = function(_, val) priority.checkHealthLevel = val end
                                 },
+                                checkProcs = {
+                                    name = "check procs",
+                                    type = "toggle",
+                                    order = 1,
+                                    width = .6,
+                                    get = function() return priority.checkProcs end,
+                                    set = function(_, val) priority.checkProcs = val end
+                                }
                             }
                         },
                         energySection = {
@@ -318,13 +335,18 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                                     set = function(_, val) priority.healthLevel = val end
                                 }
                             }
+                        },
+                        procSection = {
+                            name = "procs",
+                            type = "group",
+                            inline = true,
+                            hidden = function() return not priority.checkProcs end,
+                            args = self:CreateProcArgSection(priority.procList, abilityType, optionArgs, priorityList)
                         }
                     }
                 }
-
-
-
             }
+
         }
 
         optionArgs[tostring(index)] = prioritySection
@@ -344,10 +366,9 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                 imageHeight = 40,
                 imageWidth = 40,
                 func = function()
-                    --self:PopulateSpells(abilityType, optionArgs, priorityList)
                     local functionArgs = { abilityType, optionArgs, priorityList }
                     local addFunc = function() ConfigOptions:AddPriority(functionArgs) end
-                    self:PopulateSpells(addFunc, functionArgs)
+                    self:PopulateSpells(addFunc, functionArgs, false)
                 end,
                 order = 1,
                 width = .75
@@ -389,7 +410,7 @@ function ConfigOptions:CreateKeyboardLayoutSection()
                 func = function()
                     local functionArgs = { rowName .. btnName }
                     local modFunc = function() ConfigOptions:ModifyButtonLayout(functionArgs) end
-                    self:PopulateSpells(modFunc, functionArgs)
+                    self:PopulateSpells(modFunc, functionArgs, false)
                 end,
                 order = btnIndex,
                 width = .40
@@ -431,6 +452,93 @@ function ConfigOptions:AddPriority(priorityArgs)
     spellListFrame:Hide()
 end
 
+function ConfigOptions:AddProc(procArgs)
+    local procList = procArgs[1]
+    local abilityType = procArgs[2]
+    local optionArgs = procArgs[3]
+    local priorityList = procArgs[4]
+    local procSpellId = procArgs[5]
+    local spellName = GetSpellInfo(procSpellId)
+    if not procSpellId then return end
+    local newIndex = #procList + 1
+
+    procList[newIndex] = { spellId = procSpellId, name = spellName, procStacks = 0 }
+
+    ConfigRegistry:NotifyChange("RoHUD"); -- necessary for options to refresh
+    self:CreatePrioritySection(abilityType, optionArgs, priorityList)
+    spellListFrame:Hide()
+end
+
+function ConfigOptions:CreateProcArgSection(procList, abilityType, optionArgs, priorityList)
+    local procSections = {}
+    if not (procList) then
+        procList = {}
+    end
+    for index, proc in pairs(procList) do
+        
+        local procSection = {
+            type = "group",
+            name = "",
+            order = index,
+            width = .7,
+            args = {
+                icon = {
+                    name = "",
+                    type = "execute",
+                    image = GetSpellTexture(proc.spellId),
+                    imageHeight = 40,
+                    imageWidth = 40,
+                    func = function() end,
+                    order = 1,
+                    width = .75
+                }
+                ,
+                procStacks = {
+                    name = "stacks",
+                    type = "range",
+                    min = 0,
+                    max = 6,
+                    step = 1,
+                    order = 2,
+                    get = function() return proc.procStacks end,
+                    set = function(_, val) proc.procStacks = val end
+                },
+                delete = {
+                    name = "delete",
+                    type = "execute",
+                    confirm = function() return "Delete this proc?" end,
+                    func = function()
+                        self:DeleteProc(index, procList, abilityType, optionArgs, priorityList)
+                    end,
+                    order = 3,
+                    width = .4
+                }
+            }
+        }
+
+        procSections[tostring(index)] = procSection
+    end
+
+    local addProcbtn = {
+        name = "",
+        type = "execute",
+        image = "Interface\\ICONS\\INV_Misc_QuestionMark",
+        imageHeight = 40,
+        imageWidth = 40,
+        func = function()
+            local functionArgs = { procList, abilityType, optionArgs, priorityList }
+            local addFunc = function() ConfigOptions:AddProc(functionArgs) end
+            self:PopulateSpells(addFunc, functionArgs, true)
+        end,
+        order = 100,
+        width = .75
+    }
+
+    procSections["100"] = addProcbtn
+
+    return procSections
+end
+
 function ConfigOptions:ModifyButtonLayout(priorityArgs)
     local btnId = priorityArgs[1]
     local spellId = priorityArgs[2]
@@ -442,8 +550,7 @@ function ConfigOptions:ModifyButtonLayout(priorityArgs)
     spellListFrame:Hide()
 end
 
---type, args, priorityList,
-function ConfigOptions:PopulateSpells(callbackFunc, callbackArgs)
+function ConfigOptions:PopulateSpells(callbackFunc, callbackArgs, showTalents)
     local spellList = {}
     local index = 1
     spellListFrame = GUI:Create("Frame")
@@ -459,41 +566,91 @@ function ConfigOptions:PopulateSpells(callbackFunc, callbackArgs)
     specIconList:SetLayout("Flow")
     spellListFrame:AddChild(specIconList)
 
-    local id, specName = GetSpecializationInfo(GetSpecialization())
-    local className = UnitClass("player")
-    local numTabs = GetNumSpellTabs()
+    if not showTalents then
+        local id, specName = GetSpecializationInfo(GetSpecialization())
+        local className = UnitClass("player")
+        local numTabs = GetNumSpellTabs()
 
-    for i = 1, numTabs do
-        local name, texture, offset, numSpells = GetSpellTabInfo(i)
+        for i = 1, numTabs do
+            local name, texture, offset, numSpells = GetSpellTabInfo(i)
 
-        if (name == specName or name == className) then
-            for n = offset + 1, offset + numSpells do
-                if not IsPassiveSpell(n, "spell") then
-                    local spellName, _, spellIcon, _, _, _, spellId = GetSpellInfo(n, "spell")
-                    --and self.MasterPriorityList[spellId] == nil
-                    if spellName ~= nil then
-                        spellList[index] = { name = spellName, icon = spellIcon, id = spellId }
-                        index = index + 1
+            if (name == specName or name == className) then
+                for n = offset + 1, offset + numSpells do
+
+                    if IsPassiveSpell(n, "spell") == false then
+                        local spellName, _, spellIcon, _, _, _, spellId = GetSpellInfo(n, "spell")
+                        --and self.MasterPriorityList[spellId] == nil
+                        if spellName ~= nil then
+                            spellList[index] = { name = spellName, icon = spellIcon, id = spellId }
+                            index = index + 1
+                        end
+                    end
+                end
+
+            end
+        end
+    else -- show talents
+        spellList = self:GetTalentList()
+    end
+
+    if (spellList) then
+        table.sort(spellList, function(a, b) return a.name < b.name end)
+
+        for _, spell in pairs(spellList) do
+            local addIcon = GUI:Create("Icon")
+            addIcon:SetImage(spell.icon)
+            addIcon:SetImageSize(36, 36)
+            addIcon:SetLabel(spell.name)
+            addIcon:SetCallback("OnClick", function()
+                tinsert(callbackArgs, spell.id)
+                callbackFunc(callbackArgs) --ConfigOptions:AddPriority(spell.id, type, args, priorityList)
+            end)
+            specIconList:AddChild(addIcon)
+        end
+    end
+
+end
+
+function ConfigOptions:GetTalentList()
+    -- print("GetTalentList")
+
+    local list = {}
+
+    local configID = C_ClassTalents.GetActiveConfigID()
+    -- print("configID: ", configID)
+    if configID == nil then return end
+
+    local configInfo = C_Traits.GetConfigInfo(configID)
+    --print("configInfo: ", configInfo)
+    if configInfo == nil then return end
+
+    for _, treeID in ipairs(configInfo.treeIDs) do -- in the context of talent trees, there is only 1 treeID
+        local nodes = C_Traits.GetTreeNodes(treeID)
+        -- print("treeID: ", treeID)
+        for i, nodeID in ipairs(nodes) do
+            local nodeInfo = C_Traits.GetNodeInfo(configID, nodeID)
+            -- print("nodeInfo: ", nodeID)
+            for _, entryID in ipairs(nodeInfo.entryIDs) do -- each node can have multiple entries (e.g. choice nodes have 2)
+                local entryInfo = C_Traits.GetEntryInfo(configID, entryID)
+                --print("entryInfo: ", entryInfo.definitionID)
+                if entryInfo and entryInfo.definitionID then
+                    local definitionInfo = C_Traits.GetDefinitionInfo(entryInfo.definitionID)
+                    -- print("defInfo: ", definitionInfo.spellID)
+                    if definitionInfo.spellID then
+                        -- print(definitionInfo.spellID)
+                        local spellName, _, spellIcon, _, _, _, _, _ = GetSpellInfo(definitionInfo.spellID)
+                        local isPassive = IsPassiveSpell(definitionInfo.spellID)
+                        --print(spellName, " - passive: ", isPassive)
+                        if (nodeInfo.ranksPurchased > 0 and isPassive) then
+                            table.insert(list, { name = spellName, icon = spellIcon, id = definitionInfo.spellID })
+                        end
+
                     end
                 end
             end
         end
     end
-
-
-    table.sort(spellList, function(a, b) return a.name < b.name end)
-
-    for _, spell in pairs(spellList) do
-        local addIcon = GUI:Create("Icon")
-        addIcon:SetImage(spell.icon)
-        addIcon:SetImageSize(36, 36)
-        addIcon:SetLabel(spell.name)
-        addIcon:SetCallback("OnClick", function()
-            tinsert(callbackArgs, spell.id)
-            callbackFunc(callbackArgs) --ConfigOptions:AddPriority(spell.id, type, args, priorityList)
-        end)
-        specIconList:AddChild(addIcon)
-    end
+    return list
 end
 
 function ConfigOptions:DeleteAbilityPriority(index, type, args, priorityList)
@@ -505,6 +662,22 @@ function ConfigOptions:DeleteAbilityPriority(index, type, args, priorityList)
                 priorityList.abilities[listIndex] = priorityList.abilities[listIndex + 1]
             else
                 table.remove(priorityList.abilities, listIndex)
+            end
+        end
+    end
+
+    self:CreatePrioritySection(type, args, priorityList)
+end
+
+function ConfigOptions:DeleteProc(index, procList, type, args, priorityList)
+    local maxIndex = #procList
+    for i, v in pairs(procList) do
+        local listIndex = tonumber(i)
+        if (listIndex >= index and listIndex ~= 100) then
+            if (i ~= maxIndex) then
+               procList[listIndex] = procList[listIndex + 1]
+            else
+                table.remove(procList, listIndex)
             end
         end
     end

@@ -17,10 +17,10 @@ RoHUD.defaultOptions = {
         defensePriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
         cooldownPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
         healingPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
-        interruptPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.SpearHandStrike } },
+       -- interruptPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.SpearHandStrike } },
+        interruptAbility = Abilities.Monk.Windwalker.SpearHandStrike,
         minimap = { hide = false },
-        keyboard = KeyboardSettings.G13,
-
+        keyboard = KeyboardSettings.G13
     }
 }
 
@@ -35,11 +35,12 @@ function RoHUD:OnInitialize()
 end
 
 function RoHUD:OpenOptions()
-    self:CancelTimers()
+    self:CancelRotationTimer()
     ConfigOptions:Open()
 end
 
 function RoHUD:PriorityRotationTimer()
+   -- print("timer called...")
     -- for type, pack in pairs(abilityPacks) do
     Rotation.PrevDamageButton = Rotation:CheckAbilities(self.db.profile.damagePriorities, Rotation.PrevDamageButton,
         KeyboardDisplay.DamageFrames, KeyboardDisplay.Colors.Default, type)
@@ -53,19 +54,17 @@ function RoHUD:PriorityRotationTimer()
     Rotation.PrevHealingButton = Rotation:CheckAbilities(self.db.profile.healingPriorities, Rotation.PrevHealingButton,
         KeyboardDisplay.HealingFrames, KeyboardDisplay.Colors.Green, type)
 
-    Rotation.PrevInterruptButton = Rotation:CheckAbilities(self.db.profile.interruptPriorities,
-        Rotation.PrevInterruptButton,
-        KeyboardDisplay.InterruptFrames, KeyboardDisplay.Colors.Pink, type)
+    -- Rotation.PrevInterruptButton = Rotation:CheckAbilities(self.db.profile.interruptPriorities,
+    --     Rotation.PrevInterruptButton,
+    --     KeyboardDisplay.InterruptFrames, KeyboardDisplay.Colors.Pink, type)
     -- end
 end
 
 function RoHUD:StartRotationTimer()
-    print("starting timer")
     rotationTimer = self:ScheduleRepeatingTimer("PriorityRotationTimer", .25)
 end
 
 function RoHUD:CancelRotationTimer()
-    print("stopping timer")
     self:CancelTimer(rotationTimer)
 end
 
@@ -82,18 +81,21 @@ function RoHUD:CreateMiniMapButton()
 end
 
 function RoHUD:InitializePersistentVariables()
+    Rotation.InterruptAbility = self.db.profile.interruptAbility
+    print("interrupt ability ", Rotation.InterruptAbility.spellId)
     KeyboardDisplay.DamagePriorities = self.db.profile.damagePriorities
     KeyboardDisplay.DefensePriorities = self.db.profile.defensePriorities
     KeyboardDisplay.CooldownPriorities = self.db.profile.cooldownPriorities
     KeyboardDisplay.HealingPriorities = self.db.profile.healingPriorities
-    KeyboardDisplay.InterruptPriorities = self.db.profile.interruptPriorities
+    --KeyboardDisplay.InterruptPriorities = self.db.profile.interruptPriorities
 
     ConfigOptions.DamagePriorities = self.db.profile.damagePriorities
     ConfigOptions.DefensePriorities = self.db.profile.defensePriorities
     ConfigOptions.CooldownPriorities = self.db.profile.cooldownPriorities
     ConfigOptions.HealingPriorities = self.db.profile.healingPriorities
-    ConfigOptions.InterruptPriorities = self.db.profile.interruptPriorities
+   -- ConfigOptions.InterruptPriorities = self.db.profile.interruptPriorities
     ConfigOptions.Keyboard = self.db.profile.keyboard
+    ConfigOptions.DebugFunc = self.db.profile.debugFunc
 end
 
 function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
@@ -116,9 +118,9 @@ function RoHUD:PLAYER_TARGET_CHANGED()
 end
 
 function RoHUD:UNIT_SPELLCAST_START(_, unitTarget, _, _)
-    -- if (unitTarget == "target") then
-    --     KeyboardDisplay:CheckInterrupt()
-    -- end
+    if (unitTarget == "target") then
+        Rotation:CheckInterrupt()
+    end
 end
 
 function RoHUD:UNIT_SPELLCAST_CHANNEL_START(_, unitId, _, spellId)
@@ -167,6 +169,10 @@ function RoHUD:UNIT_SPELLCAST_SUCCEEDED(_, unitId, _, spellId)
             cdTimers[spellId] = self:ScheduleRepeatingTimer("CooldownTimer", 1, spellId)
         end
     
+        if (spellId == Rotation.InterruptAbility.spellId) then
+            local btnFrame = KeyboardSettings.AbilityMapping[Rotation.InterruptAbility.spellId]
+            KeyboardDisplay:HideGlow(btnFrame)
+        end
     end
 end
 
