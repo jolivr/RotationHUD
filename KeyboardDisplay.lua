@@ -35,11 +35,8 @@ function KeyboardDisplay:InitializeIconGrid(keyboard)
         for btnIndex = 1, row.buttonCount do
             local btnName = "Button" .. btnIndex
             local btn = row[btnName]
-            local ability = keyboard.AbilityMappings[rowName .. btnName]
-            local spellId = nil
-            if (ability) then
-                spellId = ability.spellId
-            end
+            local spellId = keyboard.AbilityMappings[rowName .. btnName]
+
             local frame = self:CreateFrame(spellId, btn.point, btn.relativeTo, btn.relativePoint, btn.xOfs, btn.yOfs,
                 btn.frame)
             tinsert(self.Frames, frame)
@@ -123,7 +120,7 @@ function KeyboardDisplay:LoadFrameList(priorityList)
     local frames = {}
     for _, ability in pairs(priorityList.abilities) do
         if (ability) then
-            tinsert(frames, KeyboardSettings.AbilityMapping[ability.spellId])
+            tinsert(frames, KeyboardSettings.SpellToButtonMapping[ability.spellId])
         end
     end
 
@@ -248,21 +245,19 @@ end
 
 function KeyboardDisplay:HandleSpellCastChannelStart(spellId)
     self.Channeling = true
-    local frame = KeyboardSettings.AbilityMapping[spellId]
+    local frame = KeyboardSettings.SpellToButtonMapping[spellId]
     if (frame ~= nil) then
-        --cancelTimers()
         self:HideAllGlows(self.DamageFrames)
         self:HideAllGlows(self.DefenseFrames)
         self:HideAllGlows(self.CooldownFrames)
         self:HideAllGlows(self.HealingFrames)
-        -- local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
-        -- self:HideGlow(btnFrame)
+
         self:ShowButtonClick(frame)
     end
 end
 
 function KeyboardDisplay:HandleSpellCastChannelStop(spellId)
-    local frame = KeyboardSettings.AbilityMapping[spellId]
+    local frame = KeyboardSettings.SpellToButtonMapping[spellId]
     if (frame) then
         self:HideButtonClick(frame)
         self.Channeling = false
@@ -270,23 +265,18 @@ function KeyboardDisplay:HandleSpellCastChannelStop(spellId)
 end
 
 function KeyboardDisplay:HandleSpellCastSucceeded(spellId)
-    local clickedBtn = KeyboardSettings.AbilityMapping[spellId]
+    local clickedBtn = KeyboardSettings.SpellToButtonMapping[spellId]
     self.LastClickedSpellId = spellId
     if (not self.Channeling) then
         self:ShowButtonClick(clickedBtn)
         C_Timer.After(0.1, function()
             self:HideButtonClick(clickedBtn)
         end)
-
-        -- if (spellId == self.InterruptAbility.spellId) then
-        --     local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
-        --     self:HideGlow(btnFrame)
-        -- end
     end
 end
 
 function KeyboardDisplay:ShowCooldown(spellId, timeLeft)
-    local frameName = KeyboardSettings.AbilityMapping[spellId]
+    local frameName = KeyboardSettings.SpellToButtonMapping[spellId]
     local frame = _G[frameName]
 
     if (frame) then

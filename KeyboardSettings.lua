@@ -1,6 +1,8 @@
 local RotationHUD, KeyboardSettings = ...
 local RotationHUD, Abilities = ...
 
+KeyboardSettings.SpellToButtonMapping = {}
+
 KeyboardSettings.G13 = {
 	Layout = {
 		rowCount = 3,
@@ -127,24 +129,26 @@ KeyboardSettings.G13 = {
 		}
 	},
 	AbilityMappings = {
-		Row1Button1 = Abilities.Monk.Windwalker.TouchofKarma,
-		Row1Button2 = Abilities.Monk.Windwalker.FortifyingBrew,
-		Row1Button3 = Abilities.Monk.Windwalker.SpearHandStrike,
-		Row1Button4 = Abilities.Monk.Windwalker.StormEarthandFire,
-		Row1Button5 = Abilities.Monk.Windwalker.TouchofDeath,
-		Row2Button1 = Abilities.Monk.Windwalker.RisingSunKick,
-		Row2Button2 = Abilities.Monk.Windwalker.BlackoutKick,
-		Row2Button3 = Abilities.Monk.Windwalker.FistsofFury,
-		Row2Button4 = Abilities.Monk.Windwalker.TigerPalm,
-		Row2Button5 = Abilities.Monk.Windwalker.ExpelHarm,
-		Row3Button1 = Abilities.Monk.Windwalker.DampenHarm,
-		Row3Button2 = Abilities.Monk.Windwalker.Vivify,
-		Row3Button3 = Abilities.Monk.Windwalker.StrikeoftheWindlord,
-		Row3Button4 = Abilities.Monk.Windwalker.SpinningCraneKick,
+		Row1Button1 = 0,
+		Row1Button2 = 0,
+		Row1Button3 = 0,
+		Row1Button4 = 0,
+		Row1Button5 = 0,
+		Row2Button1 = 0,
+		Row2Button2 = 0,
+		Row2Button3 = 0,
+		Row2Button4 = 0,
+		Row2Button5 = 0,
+		Row3Button1 = 0,
+		Row3Button2 = 0,
+		Row3Button3 = 0,
+		Row3Button4 = 0,
 	}
 }
 
-KeyboardSettings.AbilityMapping = {}
-for btn, ability in pairs(KeyboardSettings.G13.AbilityMappings) do
-    KeyboardSettings.AbilityMapping[ability.spellId] = btn
+function KeyboardSettings:InitializeBtnMapping(abilityList)
+	self.SpellToButtonMapping = {}
+	for btn, spellId in pairs(abilityList) do
+		self.SpellToButtonMapping[spellId] = btn
+	end
 end

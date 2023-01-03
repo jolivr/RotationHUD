@@ -13,12 +13,11 @@ RoHUD = LibStub('AceAddon-3.0'):NewAddon('RoHUD', 'AceConsole-3.0', 'AceEvent-3.
 
 RoHUD.defaultOptions = {
     profile = {
-        damagePriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
-        defensePriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
-        cooldownPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
-        healingPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.BlackoutKick } },
-       -- interruptPriorities = { check = true, abilities = { Abilities.Monk.Windwalker.SpearHandStrike } },
-        interruptAbility = Abilities.Monk.Windwalker.SpearHandStrike,
+        damagePriorities = { check = true, abilities = {} },
+        defensePriorities = { check = true, abilities = {} },
+        cooldownPriorities = { check = true, abilities = {} },
+        healingPriorities = { check = true, abilities = {}},
+        interruptAbility = {spellId = 116705},
         minimap = { hide = false },
         keyboard = KeyboardSettings.G13
     }
@@ -40,31 +39,28 @@ function RoHUD:OpenOptions()
 end
 
 function RoHUD:PriorityRotationTimer()
-   -- print("timer called...")
-    -- for type, pack in pairs(abilityPacks) do
+    
+   
     Rotation.PrevDamageButton = Rotation:CheckAbilities(self.db.profile.damagePriorities, Rotation.PrevDamageButton,
-        KeyboardDisplay.DamageFrames, KeyboardDisplay.Colors.Default, type)
+        KeyboardDisplay.DamageFrames, KeyboardDisplay.Colors.Default)
 
     Rotation.PrevDefenseButton = Rotation:CheckAbilities(self.db.profile.defensePriorities, Rotation.PrevDefenseButton,
-        KeyboardDisplay.DefenseFrames, KeyboardDisplay.Colors.Red, type)
+        KeyboardDisplay.DefenseFrames, KeyboardDisplay.Colors.Red)
 
     Rotation.PrevCooldownButton = Rotation:CheckAbilities(self.db.profile.cooldownPriorities, Rotation.PrevCooldownButton
-        , KeyboardDisplay.CooldownFrames, KeyboardDisplay.Colors.Blue, type)
+        , KeyboardDisplay.CooldownFrames, KeyboardDisplay.Colors.Blue)
 
     Rotation.PrevHealingButton = Rotation:CheckAbilities(self.db.profile.healingPriorities, Rotation.PrevHealingButton,
-        KeyboardDisplay.HealingFrames, KeyboardDisplay.Colors.Green, type)
-
-    -- Rotation.PrevInterruptButton = Rotation:CheckAbilities(self.db.profile.interruptPriorities,
-    --     Rotation.PrevInterruptButton,
-    --     KeyboardDisplay.InterruptFrames, KeyboardDisplay.Colors.Pink, type)
-    -- end
+        KeyboardDisplay.HealingFrames, KeyboardDisplay.Colors.Green)
 end
 
 function RoHUD:StartRotationTimer()
+    print("Starting timers")
     rotationTimer = self:ScheduleRepeatingTimer("PriorityRotationTimer", .25)
 end
 
 function RoHUD:CancelRotationTimer()
+    print("Cancelling timers")
     self:CancelTimer(rotationTimer)
 end
 
@@ -77,12 +73,12 @@ function RoHUD:CreateMiniMapButton()
             self:OpenOptions()
         end,
     })
+---@diagnostic disable-next-line: param-type-mismatch
     Icon:Register("MiniMapIcon", RoHUD_LDB, self.db.profile.minimap)
 end
 
 function RoHUD:InitializePersistentVariables()
     Rotation.InterruptAbility = self.db.profile.interruptAbility
-    print("interrupt ability ", Rotation.InterruptAbility.spellId)
     KeyboardDisplay.DamagePriorities = self.db.profile.damagePriorities
     KeyboardDisplay.DefensePriorities = self.db.profile.defensePriorities
     KeyboardDisplay.CooldownPriorities = self.db.profile.cooldownPriorities
@@ -95,7 +91,7 @@ function RoHUD:InitializePersistentVariables()
     ConfigOptions.HealingPriorities = self.db.profile.healingPriorities
    -- ConfigOptions.InterruptPriorities = self.db.profile.interruptPriorities
     ConfigOptions.Keyboard = self.db.profile.keyboard
-    ConfigOptions.DebugFunc = self.db.profile.debugFunc
+    KeyboardSettings:InitializeBtnMapping(self.db.profile.keyboard.AbilityMappings)
 end
 
 function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
@@ -151,7 +147,7 @@ function RoHUD:CooldownTimer(spellId)
        -- print("spellid: ", spellId, " time left: ", timeLeft)
         KeyboardDisplay:ShowCooldown(spellId, timeLeft)
     else
-        local frameName = KeyboardSettings.AbilityMapping[spellId]
+        local frameName = KeyboardSettings.SpellToButtonMapping[spellId]
             KeyboardDisplay:Saturate(frameName)
         self:CancelTimer(cdTimers[spellId])
     end
@@ -164,13 +160,13 @@ function RoHUD:UNIT_SPELLCAST_SUCCEEDED(_, unitId, _, spellId)
         local cooldownms, gcdms = GetSpellBaseCooldown(spellId)
 
         if(cooldownms > 0) then
-            local frameName = KeyboardSettings.AbilityMapping[spellId]
+            local frameName = KeyboardSettings.SpellToButtonMapping[spellId]
             KeyboardDisplay:Desaturate(frameName)
             cdTimers[spellId] = self:ScheduleRepeatingTimer("CooldownTimer", 1, spellId)
         end
     
         if (spellId == Rotation.InterruptAbility.spellId) then
-            local btnFrame = KeyboardSettings.AbilityMapping[Rotation.InterruptAbility.spellId]
+            local btnFrame = KeyboardSettings.SpellToButtonMapping[Rotation.InterruptAbility.spellId]
             KeyboardDisplay:HideGlow(btnFrame)
         end
     end

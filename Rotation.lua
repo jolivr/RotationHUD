@@ -77,7 +77,7 @@ function Rotation:GetCooldown(spellid, timeShift)
     end
 end
 
-function Rotation:AbilityReady(ability)
+function Rotation:AbilityReady(ability, printDebug)
     local ready = false
     local spellId = ability.spellId
     local known = IsPlayerSpell(spellId)
@@ -94,38 +94,57 @@ function Rotation:AbilityReady(ability)
     local energyGood = true
     local chiGood = true
     local healthGood = true
-    local justClicked = false
+   -- local justClicked = false
     local procCheckPassed = true
 
-    if (self.LastClickedSpellId == spellId) then
-        justClicked = true
-    end
-
+    -- if (self.LastClickedSpellId == spellId) then
+    --     justClicked = true
+    -- end
+        if(printDebug) then
+            print("")
+            print("---")
+            print("Debug for ", spellName)
+        end
     if (cd > 0) then
+        if(printDebug) then
+            print("On cooldown")
+        end
+
         onCooldown = true
     end
 
+    
     if (ability.checkHealthLevel) then
         local health = UnitHealth("player")
         local healthMax = UnitHealthMax("player")
-        local healthCheck = self:ConditionalCheck(health, healthMax, ability.healthLevel, ability.healthOp, true)
+        local healthCheck = self:ConditionalCheck(health, healthMax, ability.healthLevel, ability.healthOp, true, printDebug)
         if (not healthCheck) then
             healthGood = false
+            if(printDebug) then
+                print("Failed health check")
+            end
         end
     end
 
     if (ability.checkEnergyLevel) then
-        local energyCheck = self:ConditionalCheck(energy, energyMax, ability.energyLevel, ability.energyOp, true)
+        local energyCheck = self:ConditionalCheck(energy, energyMax, ability.energyLevel, ability.energyOp, true, printDebug)
         if (not energyCheck) then
             energyGood = false
+            if(printDebug) then
+                print("energy ", energy, ",energyMax ", energyMax,",energyLevel ", ability.energyLevel,",energyOp ", ability.energyOp)
+                print("Failed energy check")
+            end
         end
     end
 
     if (ability.checkChiLevel) then
-        local chiCheck = self:ConditionalCheck(chi, chiMax, ability.chiLevel, ability.chiOp, false)
+        local chiCheck = self:ConditionalCheck(chi, chiMax, ability.chiLevel, ability.chiOp, false, printDebug)
 
         if (not chiCheck) then
             chiGood = false
+            if(printDebug) then
+                print("Failed chi check")
+            end
         end
     end
 
@@ -142,6 +161,9 @@ function Rotation:AbilityReady(ability)
         for i, proc in pairs(ability.procList) do
             if(not buffs[proc.name] or buffs[proc.name].stacks < proc.procStacks) then
                 procCheckPassed = false
+                if(printDebug) then
+                    print("Failed proc check")
+                end
             end
 
         end
@@ -162,6 +184,15 @@ function Rotation:AbilityReady(ability)
     if (inRange == 0) then
         inRange = false
     end
+    if(inRange == 1) then
+        inRange = true
+    end
+
+    if(not inRange) then
+        if(printDebug) then
+            print("Failed range check")
+        end
+    end
 
     if (
         known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood and inRange and healthGood
@@ -171,16 +202,21 @@ function Rotation:AbilityReady(ability)
         ready = true
     end
 
-    return ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown
+    return ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healthGood, procCheckPassed
 end
 
-function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, targetOp, isPercentage)
+function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, targetOp, isPercentage, printDebug)
     local playerPropLevel = playerLevel --math.floor((playerProp / playerPropMax) * 100)
     local targetPropLevel = targetLevel --(targetLevel * 100)
 
     if (isPercentage) then
         playerPropLevel = math.floor((playerPropLevel / playerMaxLevel) * 100)
         targetPropLevel = targetLevel * 100
+    end
+
+    if(printDebug) then
+        print("player%: ", playerPropLevel)
+        print("target%: ", targetPropLevel) 
     end
 
     local conditionMatched = false
@@ -209,7 +245,7 @@ function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, tar
     return conditionMatched
 end
 
-function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor, typeName)
+function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor)
     if (not priorityList.check) then
         return
     end
@@ -218,9 +254,15 @@ function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor
     local readyButton = 0
     for _, ability in pairs(priorityList.abilities) do
         if (ability) then
-            local btn = KeyboardSettings.AbilityMapping[ability.spellId]
+            local btn = KeyboardSettings.SpellToButtonMapping[ability.spellId]
+            local printDebug = false
             if (btn) then
-                local ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healthGood = self:AbilityReady(ability)
+                -- if(ability.spellId == 322101) then
+                --   printDebug = true
+                -- end
+
+                local ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healthGood, procCheckPassed = self:AbilityReady(ability, printDebug)
+
                 if (ready) then
                     KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Clear)
                     KeyboardDisplay:Saturate(btn)
@@ -258,7 +300,7 @@ end
 
 function Rotation:CheckInterrupt()
     local name, _, _, _, _, _, _, notInterruptible, _ = UnitCastingInfo("target")
-    local btnFrame = KeyboardSettings.AbilityMapping[self.InterruptAbility.spellId]
+    local btnFrame = KeyboardSettings.SpellToButtonMapping[self.InterruptAbility.spellId]
 
     if (not notInterruptible and self:AbilityReady(self.InterruptAbility)) then
         KeyboardDisplay:ShowGlow(btnFrame, KeyboardDisplay.Colors.Pink)

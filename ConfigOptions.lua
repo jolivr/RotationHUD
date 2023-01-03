@@ -1,6 +1,7 @@
 local RotationHUD, ConfigOptions = ...
 local RotationHUD, Abilities = ...
 local RotationHUD, KeyboardDisplay = ...
+local RotationHUD, KeyboardSettings = ...
 
 local GUI = LibStub("AceGUI-3.0")
 local ConfigDialog = LibStub("AceConfigDialog-3.0")
@@ -24,7 +25,7 @@ ConfigOptions.InterruptPriorities = {}
 ConfigOptions.MasterPriorityList = {}
 ConfigOptions.RoHUD = {}
 ConfigOptions.Keyboard = {}
-ConfigOptions.DebugFunc = {}
+ConfigOptions.ResetProfileFunc = function() end
 
 ConfigOptions.Menu = {
     name = "Gamepad Icons - Windwalker",
@@ -73,6 +74,11 @@ ConfigOptions.Menu = {
             type = "execute",
             func = function() ReloadUI() end,
             order = 1000
+        },
+        resetProfile = {
+            name = "Reset Profile",
+            type = "execute",
+            func = ConfigOptions.ResetProfileFunc
         }
     },
 }
@@ -80,7 +86,7 @@ ConfigOptions.Menu = {
 
 function ConfigOptions:Open()
     local screenHeight = GetScreenHeight() * UIParent:GetEffectiveScale()
-    local screenWidth = GetScreenWidth() *  UIParent:GetEffectiveScale()
+    local screenWidth = GetScreenWidth() * UIParent:GetEffectiveScale()
 
     ConfigDialog:SetDefaultSize("RoHUD", screenWidth * .6, screenHeight * 1.6)
     ConfigDialog:Open("RoHUD")
@@ -117,7 +123,7 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
     optionArgs["0"] = checkSection
     for index, priority in pairs(priorityList.abilities) do
         local upDisabled, downDisabled = false, false
-
+        local spellName = GetSpellInfo(priority.spellId)
         if (index == 1) then
             upDisabled = true
         end
@@ -133,7 +139,7 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
             disabled = function() return not priorityList.check end,
             args = {
                 icon = {
-                    name = Abilities.Monk.AbilityNameLookup[priority.spellId],
+                    name = spellName,
                     type = "execute",
                     image = GetSpellTexture(priority.spellId),
                     imageHeight = 40,
@@ -177,7 +183,9 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                 showConditions = {
                     name = function()
                         local name = "Setup conditions"
-                        if (priority.checkEnergyLevel or priority.checkChiLevel or priority.checkHealthLevel or priority.checkProcs) then
+                        if (
+                            priority.checkEnergyLevel or priority.checkChiLevel or priority.checkHealthLevel or
+                                priority.checkProcs) then
                             name = "\124cFF00FF00See existing conditions\124r"
                         end
 
@@ -395,11 +403,7 @@ function ConfigOptions:CreateKeyboardLayoutSection()
         for btnIndex = 1, row.buttonCount do
             local btnName = "Button" .. btnIndex
             local btn = row[btnName]
-            local ability = abilityMappings[rowName .. btnName]
-            local spellId = nil
-            if (ability) then
-                spellId = ability.spellId
-            end
+            local spellId = abilityMappings[rowName .. btnName]
 
             local btnSection = {
                 name = "",
@@ -444,8 +448,9 @@ function ConfigOptions:AddPriority(priorityArgs)
     local priorityList = priorityArgs[3]
     if not spellId then return end
     local newIndex = #priorityList.abilities + 1
+    local newAbility = Abilities:CreateSpell(spellId)
 
-    priorityList.abilities[newIndex] = Abilities.Monk.AbilityLookup[spellId]
+    priorityList.abilities[newIndex] = newAbility
 
     ConfigRegistry:NotifyChange("RoHUD"); -- necessary for options to refresh
     self:CreatePrioritySection(abilityType, optionArgs, priorityList)
@@ -475,7 +480,7 @@ function ConfigOptions:CreateProcArgSection(procList, abilityType, optionArgs, p
         procList = {}
     end
     for index, proc in pairs(procList) do
-        
+
         local procSection = {
             type = "group",
             name = "",
@@ -543,7 +548,9 @@ function ConfigOptions:ModifyButtonLayout(priorityArgs)
     local btnId = priorityArgs[1]
     local spellId = priorityArgs[2]
 
-    self.Keyboard.AbilityMappings[btnId] = Abilities.Monk.AbilityLookup[spellId]
+    self.Keyboard.AbilityMappings[btnId] = spellId
+    KeyboardSettings:InitializeBtnMapping(self.Keyboard.AbilityMappings)
+    
     ConfigRegistry:NotifyChange("RoHUD");
     self:CreateKeyboardLayoutSection()
     KeyboardDisplay:InitializeIconGrid(self.Keyboard)
@@ -590,6 +597,7 @@ function ConfigOptions:PopulateSpells(callbackFunc, callbackArgs, showTalents)
             end
         end
     else -- show talents
+        ---@diagnostic disable-next-line: cast-local-type
         spellList = self:GetTalentList()
     end
 
@@ -675,7 +683,7 @@ function ConfigOptions:DeleteProc(index, procList, type, args, priorityList)
         local listIndex = tonumber(i)
         if (listIndex >= index and listIndex ~= 100) then
             if (i ~= maxIndex) then
-               procList[listIndex] = procList[listIndex + 1]
+                procList[listIndex] = procList[listIndex + 1]
             else
                 table.remove(procList, listIndex)
             end
