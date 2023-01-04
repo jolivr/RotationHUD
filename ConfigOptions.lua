@@ -102,7 +102,7 @@ function ConfigOptions:Open()
     local screenHeight = GetScreenHeight() * UIParent:GetEffectiveScale()
     local screenWidth = GetScreenWidth() * UIParent:GetEffectiveScale()
 
-    ConfigDialog:SetDefaultSize("RoHUD", screenWidth * .6, screenHeight * 1.6)
+    ConfigDialog:SetDefaultSize("RoHUD", screenWidth * .6, screenHeight * 1.5)
     ConfigDialog:Open("RoHUD")
     ConfigDialog:SelectGroup("RoHUD", "priorities", "damage")
 end
@@ -416,7 +416,7 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
                 type = "range",
                 min = -200,
                 max = 200,
-                step = 10,
+                step = 5,
                 isPercent = false,
                 order = 1,
                 get = function() 
@@ -435,7 +435,7 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
                 type = "range",
                 min = -200,
                 max = 200,
-                step = 10,
+                step = 5,
                 isPercent = false,
                 order = 2,
                 get = function()
@@ -452,6 +452,53 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
         }
     }
     args["position"] = offsetSection
+
+    if(rowPrefix == "Row") then --Primary layout
+        local healthbarOffsetSection = {
+            name = "Healthbar Position",
+            type = "group",
+            inline = true,
+            order = 100,
+            args = {
+                hbxOffsetSection = {
+                    name = "X Offset",
+                    type = "range",
+                    min = -200,
+                    max = 200,
+                    step = 5,
+                    isPercent = false,
+                    order = 1,
+                    get = function() 
+                        return self.Keyboard["Healthbar"].xOfs 
+                    end,
+                    set = function(_, val) 
+                        self.Keyboard["Healthbar"].xOfs = val 
+                        KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
+                        KeyboardDisplay:ShowGrid()
+                    end
+                },
+                hbyOffsetSection = {
+                    name = "Y Offset",
+                    type = "range",
+                    min = -200,
+                    max = 200,
+                    step = 5,
+                    isPercent = false,
+                    order = 2,
+                    get = function()
+                        return self.Keyboard["Healthbar"].yOfs  
+                    end,
+                    set = function(_, val) 
+                        self.Keyboard["Healthbar"].yOfs = val   
+                        KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
+                        KeyboardDisplay:ShowGrid()
+                    end
+                }
+            }
+        }
+        args["hbposition"] = healthbarOffsetSection
+    end 
+
     for rowIndex = 1, layout.rowCount do
         local rowName = rowPrefix .. rowIndex
         local row = layout[rowName]

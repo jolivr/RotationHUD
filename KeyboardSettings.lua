@@ -271,6 +271,11 @@ KeyboardSettings.G13 = {
 		TwoRow4Button1 = 0,
 		TwoRow4Button2 = 0,
 		TwoRow4Button3 = 0,
+	},
+	Healthbar = {
+		frame = "ElvNP_Player",
+		xOfs = 0,
+		yOfs = -60
 	}
 }
 

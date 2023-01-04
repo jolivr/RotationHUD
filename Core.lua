@@ -93,13 +93,11 @@ function RoHUD:InitializePersistentVariables()
    -- ConfigOptions.InterruptPriorities = self.db.profile.interruptPriorities
 
     ConfigOptions.Keyboard = self.db.profile.keyboard
-
+    KeyboardDisplay.Keyboard = self.db.profile.keyboard
     KeyboardSettings:InitializeBtnMapping(self.db.profile.keyboard.PrimaryAbilityMappings,self.db.profile.keyboard.SecondaryAbilityMappings)
 end
 
 function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
-    healthBarFrame = _G["ElvNP_Player"] --temporary variable
-    KeyboardDisplay.HealthBarFrame = healthBarFrame
     KeyboardDisplay:InitializeIconGrid(self.db.profile.keyboard.PrimaryLayout, self.db.profile.keyboard.PrimaryAbilityMappings, "Row")
     KeyboardDisplay:InitializeIconGrid(self.db.profile.keyboard.SecondaryLayout, self.db.profile.keyboard.SecondaryAbilityMappings, "TwoRow")
     ConfigOptions:InitializeMenu()

@@ -14,7 +14,12 @@ KeyboardDisplay.CooldownPriorities = {}
 KeyboardDisplay.HealingPriorities = {}
 KeyboardDisplay.InterruptPriorities = {}
 KeyboardDisplay.Channeling = false
-KeyboardDisplay.HealthBarFrame = {}
+KeyboardDisplay.HealthbarFrame = {}
+KeyboardDisplay.PrimaryXOfs = 0
+KeyboardDisplay.PrimaryYOfs = 0
+KeyboardDisplay.HealthbarXOfs = 0
+KeyboardDisplay.HealthbarYOfs = 0
+KeyboardDisplay.Keyboard = {}
 
 KeyboardDisplay.Colors = {
     Default = { 0.95, 0.95, 0.32, 1 },
@@ -36,6 +41,14 @@ function KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
         for btnIndex = 1, row.buttonCount do
             local btnName = "Button" .. btnIndex
             local btn = row[btnName]
+            if(rowPrefix == "Row" and rowIndex == 1 and btnIndex == 1) then
+                self.PrimaryXOfs = btn.xOfs
+                self.PrimaryYOfs = btn.yOfs
+                self.HealthbarXOfs = self.Keyboard["Healthbar"].xOfs
+                self.HealthbarYOfs = self.Keyboard["Healthbar"].yOfs
+                self.HealthbarFrame = _G[self.Keyboard["Healthbar"].frame]
+            end
+
             local spellId = mappings[rowName .. btnName]
             local frame = self:CreateFrame(spellId, btn.point, btn.relativeTo, btn.relativePoint, btn.xOfs, btn.yOfs,
                 btn.frame)
@@ -43,8 +56,8 @@ function KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
         end
     end
 
-    if (self.HealthBarFrame) then
-        self.HealthBarFrame:SetAlpha(0)
+    if (self.HealthbarFrame) then
+        self.HealthbarFrame:SetAlpha(0)
     end
 
     self:InitializeFrames()
@@ -127,19 +140,14 @@ function KeyboardDisplay:LoadFrameList(priorityList)
     return frames
 end
 
-function KeyboardDisplay:AttachToNamePlate(healthBarFrame)
+function KeyboardDisplay:AttachToNamePlate()
     local plate = C_NamePlate.GetNamePlateForUnit("target")
     local keyBtn = _G["Row1Button1"]
-    local yOfs = 0
     if (plate) then
-        if (not plate:IsVisible()) then
-            yOfs = -300
-        end
-        
-        keyBtn:SetPoint("TOPLEFT", plate, "BOTTOMLEFT")
-        healthBarFrame:ClearAllPoints()
-        healthBarFrame:SetPoint("CENTER", plate, "CENTER", 0, -120)
-        healthBarFrame:SetAlpha(1)
+        keyBtn:SetPoint("TOPLEFT", plate, "BOTTOMLEFT",self.PrimaryXOfs, self.PrimaryYOfs)
+        self.HealthbarFrame:ClearAllPoints()
+        self.HealthbarFrame:SetPoint("TOPLEFT", keyBtn, "BOTTOMLEFT", self.HealthbarXOfs, self.HealthbarYOfs)
+        self.HealthbarFrame:SetAlpha(1)
 
         return true
     else
@@ -148,20 +156,20 @@ function KeyboardDisplay:AttachToNamePlate(healthBarFrame)
 end
 
 function KeyboardDisplay:ShowGrid()
-    if (self:AttachToNamePlate(self.HealthBarFrame)) then
+    if (self:AttachToNamePlate()) then
         for i, btnFrame in pairs(self.Frames) do
             btnFrame:SetAlpha(1)
         end
     end
 end
 
-function KeyboardDisplay:HideGrid(healthBarFrame)
+function KeyboardDisplay:HideGrid()
     for i, btnFrame in pairs(self.Frames) do
         btnFrame:SetAlpha(0)
     end
 
-    if (healthBarFrame) then
-        healthBarFrame:SetAlpha(0)
+    if (self.HealthbarFrame) then
+        self.HealthbarFrame:SetAlpha(0)
     end
 
 end
