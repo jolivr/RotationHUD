@@ -94,44 +94,47 @@ function Rotation:AbilityReady(ability, printDebug)
     local energyGood = true
     local chiGood = true
     local healthGood = true
-   -- local justClicked = false
+    -- local justClicked = false
     local procCheckPassed = true
 
     -- if (self.LastClickedSpellId == spellId) then
     --     justClicked = true
     -- end
-        if(printDebug) then
-            print("")
-            print("---")
-            print("Debug for ", spellName)
-        end
+    if (printDebug) then
+        print("")
+        print("---")
+        print("Debug for ", spellName)
+    end
     if (cd > 0) then
-        if(printDebug) then
+        if (printDebug) then
             print("On cooldown")
         end
 
         onCooldown = true
     end
 
-    
+
     if (ability.checkHealthLevel) then
         local health = UnitHealth("player")
         local healthMax = UnitHealthMax("player")
-        local healthCheck = self:ConditionalCheck(health, healthMax, ability.healthLevel, ability.healthOp, true, printDebug)
+        local healthCheck = self:ConditionalCheck(health, healthMax, ability.healthLevel, ability.healthOp, true,
+            printDebug)
         if (not healthCheck) then
             healthGood = false
-            if(printDebug) then
+            if (printDebug) then
                 print("Failed health check")
             end
         end
     end
 
     if (ability.checkEnergyLevel) then
-        local energyCheck = self:ConditionalCheck(energy, energyMax, ability.energyLevel, ability.energyOp, true, printDebug)
+        local energyCheck = self:ConditionalCheck(energy, energyMax, ability.energyLevel, ability.energyOp, true,
+            printDebug)
         if (not energyCheck) then
             energyGood = false
-            if(printDebug) then
-                print("energy ", energy, ",energyMax ", energyMax,",energyLevel ", ability.energyLevel,",energyOp ", ability.energyOp)
+            if (printDebug) then
+                print("energy ", energy, ",energyMax ", energyMax, ",energyLevel ", ability.energyLevel, ",energyOp ",
+                    ability.energyOp)
                 print("Failed energy check")
             end
         end
@@ -142,7 +145,7 @@ function Rotation:AbilityReady(ability, printDebug)
 
         if (not chiCheck) then
             chiGood = false
-            if(printDebug) then
+            if (printDebug) then
                 print("Failed chi check")
             end
         end
@@ -157,15 +160,22 @@ function Rotation:AbilityReady(ability, printDebug)
                 buffs[name] = { spellId = spellId, stacks = count }
             end
         end
-        
+
         for i, proc in pairs(ability.procList) do
-            if(not buffs[proc.name] or buffs[proc.name].stacks < proc.procStacks) then
+            if (not buffs[proc.name]) then
                 procCheckPassed = false
-                if(printDebug) then
+                if (printDebug) then
                     print("Failed proc check")
                 end
+            else
+                if (proc.checkStacks and buffs[proc.name].stacks < proc.procStacks) then
+                    procCheckPassed = false
+                else
+                    if (printDebug) then
+                        print(proc.name, " triggered!")
+                    end
+                end
             end
-
         end
     end
 
@@ -184,12 +194,12 @@ function Rotation:AbilityReady(ability, printDebug)
     if (inRange == 0) then
         inRange = false
     end
-    if(inRange == 1) then
+    if (inRange == 1) then
         inRange = true
     end
 
-    if(not inRange) then
-        if(printDebug) then
+    if (not inRange) then
+        if (printDebug) then
             print("Failed range check")
         end
     end
@@ -197,7 +207,7 @@ function Rotation:AbilityReady(ability, printDebug)
     if (
         known and usable and not notEnoughPower and not onCooldown and energyGood and chiGood and inRange and healthGood
             and procCheckPassed
-            --not justClicked
+        --not justClicked
         ) then
         ready = true
     end
@@ -214,9 +224,9 @@ function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, tar
         targetPropLevel = targetLevel * 100
     end
 
-    if(printDebug) then
+    if (printDebug) then
         print("player%: ", playerPropLevel)
-        print("target%: ", targetPropLevel) 
+        print("target%: ", targetPropLevel)
     end
 
     local conditionMatched = false
@@ -261,7 +271,8 @@ function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor
                 --   printDebug = true
                 -- end
 
-                local ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healthGood, procCheckPassed = self:AbilityReady(ability, printDebug)
+                local ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healthGood, procCheckPassed = self
+                    :AbilityReady(ability, printDebug)
 
                 if (ready) then
                     KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Clear)

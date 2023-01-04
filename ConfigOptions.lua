@@ -353,7 +353,7 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                                     type = "range",
                                     min = 0,
                                     max = 1,
-                                    step = .1,
+                                    step = .05,
                                     isPercent = true,
                                     order = 3,
                                     get = function() return priority.healthLevel end,
@@ -610,6 +610,14 @@ function ConfigOptions:CreateProcArgSection(procList, abilityType, optionArgs, p
                     width = .75
                 }
                 ,
+                checkStacks = {
+                    name = "check stacks",
+                    type = "toggle",
+                    order = 1,
+                    width = .6,
+                    get = function() return proc.checkStacks end,
+                    set = function(_, val) proc.checkStacks = val end
+                },
                 procStacks = {
                     name = "stacks",
                     type = "range",
@@ -617,6 +625,7 @@ function ConfigOptions:CreateProcArgSection(procList, abilityType, optionArgs, p
                     max = 6,
                     step = 1,
                     order = 2,
+                    hidden = function() return not proc.checkStacks end,
                     get = function() return proc.procStacks end,
                     set = function(_, val) proc.procStacks = val end
                 },

@@ -39,8 +39,6 @@ function RoHUD:OpenOptions()
 end
 
 function RoHUD:PriorityRotationTimer()
-    
-   
     Rotation.PrevDamageButton = Rotation:CheckAbilities(self.db.profile.damagePriorities, Rotation.PrevDamageButton,
         KeyboardDisplay.DamageFrames, KeyboardDisplay.Colors.Default)
 
@@ -55,7 +53,7 @@ function RoHUD:PriorityRotationTimer()
 end
 
 function RoHUD:StartRotationTimer()
-   -- print("Starting timers")
+    --print("Starting timers")
     rotationTimer = self:ScheduleRepeatingTimer("PriorityRotationTimer", .25)
 end
 
@@ -106,10 +104,12 @@ end
 function RoHUD:PLAYER_TARGET_CHANGED()
     if (UnitCanAttack("player", "target")) then
         C_Timer.After(0.1, function()
+           -- print("calling start from TARGET CHANGED")
             self:StartRotationTimer()
             KeyboardDisplay:ShowGrid(healthBarFrame)
         end)
     else
+       -- print("calling stop from TARGET CHANGED")
         self:CancelRotationTimer()
         KeyboardDisplay:HideGrid(healthBarFrame)
     end
@@ -123,6 +123,7 @@ end
 
 function RoHUD:UNIT_SPELLCAST_CHANNEL_START(_, unitId, _, spellId)
     if unitId == 'player' then
+       -- print("calling stop from CHANNEL START")
         self:CancelRotationTimer()
         Rotation:ClearPreviousButtons()
         KeyboardDisplay:HandleSpellCastChannelStart(spellId)
@@ -131,6 +132,7 @@ end
 
 function RoHUD:UNIT_SPELLCAST_CHANNEL_STOP(_, unitId, _, spellId)
     if unitId == 'player' then
+        --print("calling start from CHANNEL STOP")
         self:StartRotationTimer()
         KeyboardDisplay:HandleSpellCastChannelStop(spellId)
     end
