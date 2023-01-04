@@ -147,12 +147,10 @@ function RoHUD:CooldownTimer(spellId)
     if(gcdms > 0) then
         timeLeft = timeLeft - (gcdms / 1000)
     end
-    if(timeLeft >= 0) then
-       -- print("spellid: ", spellId, " time left: ", timeLeft)
+    if(timeLeft > 0) then
         KeyboardDisplay:ShowCooldown(spellId, timeLeft)
     else
-        local frameName = KeyboardSettings.SpellToButtonMapping[spellId]
-            KeyboardDisplay:Saturate(frameName)
+        KeyboardDisplay:HideCooldown(spellId)
         self:CancelTimer(cdTimers[spellId])
     end
    

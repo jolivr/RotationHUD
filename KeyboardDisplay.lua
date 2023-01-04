@@ -35,13 +35,13 @@ KeyboardDisplay.Colors = {
 function KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
     for rowIndex = 1, layout.rowCount do
         local rowName = rowPrefix .. rowIndex --"Row" .. rowIndex
-     
+
         local row = layout[rowName]
-   
+
         for btnIndex = 1, row.buttonCount do
             local btnName = "Button" .. btnIndex
             local btn = row[btnName]
-            if(rowPrefix == "Row" and rowIndex == 1 and btnIndex == 1) then
+            if (rowPrefix == "Row" and rowIndex == 1 and btnIndex == 1) then
                 self.PrimaryXOfs = btn.xOfs
                 self.PrimaryYOfs = btn.yOfs
                 self.HealthbarXOfs = self.Keyboard["Healthbar"].xOfs
@@ -112,7 +112,6 @@ function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, 
     local textOverlay = btnFrame.textOverlay
     if not textOverlay then
         textOverlay = btnFrame:CreateFontString("TextOverlay", "OVERLAY")
-        textOverlay:SetFontObject("GameTooltipTextSmall")
         textOverlay:SetPoint("CENTER", 0, 0)
 
         btnFrame.textOverlay = textOverlay
@@ -144,7 +143,7 @@ function KeyboardDisplay:AttachToNamePlate()
     local plate = C_NamePlate.GetNamePlateForUnit("target")
     local keyBtn = _G["Row1Button1"]
     if (plate) then
-        keyBtn:SetPoint("TOPLEFT", plate, "BOTTOMLEFT",self.PrimaryXOfs, self.PrimaryYOfs)
+        keyBtn:SetPoint("TOPLEFT", plate, "BOTTOMLEFT", self.PrimaryXOfs, self.PrimaryYOfs)
         self.HealthbarFrame:ClearAllPoints()
         self.HealthbarFrame:SetPoint("TOPLEFT", keyBtn, "BOTTOMLEFT", self.HealthbarXOfs, self.HealthbarYOfs)
         self.HealthbarFrame:SetAlpha(1)
@@ -286,16 +285,28 @@ end
 function KeyboardDisplay:ShowCooldown(spellId, timeLeft)
     local frameName = KeyboardSettings.SpellToButtonMapping[spellId]
     local frame = _G[frameName]
-
     if (frame) then
         if (frame.textOverlay) then
-            if (timeLeft == 0) then
-                frame.textOverlay:SetText("")
-            else
-                frame.textOverlay:SetText(timeLeft)
+            --local c = KeyboardDisplay.Colors.Green
+            --textOverlay:SetTextColor(c[1],c[2],c[3],c[4])
+            local fontSize = 11
+            if(timeLeft >= 60) then
+                fontSize = 8
+                timeLeft = tostring(ceil((timeLeft / 60))).."m"
             end
-
+            frame.textOverlay:SetFont("Fonts\\FRIZQT__.TTF", fontSize, "OUTLINE")
+            frame.textOverlay:SetText(timeLeft)
         end
     end
+end
 
+function KeyboardDisplay:HideCooldown(spellId)
+    local frameName = KeyboardSettings.SpellToButtonMapping[spellId]
+    local frame = _G[frameName]
+    if (frame) then
+        if (frame.textOverlay) then
+            frame.textOverlay:SetFont("Fonts\\FRIZQT__.TTF", 11, "OUTLINE")
+            frame.textOverlay:SetText("")
+        end
+    end
 end
