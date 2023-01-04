@@ -2,9 +2,12 @@ local RotationHUD, KeyboardSettings = ...
 local RotationHUD, Abilities = ...
 
 KeyboardSettings.SpellToButtonMapping = {}
+KeyboardSettings.PrimaryOffset = {}
+KeyboardSettings.SecondaryOffset = {}
 
 KeyboardSettings.G13 = {
-	Layout = {
+	PrimaryOffset = {xOfs = 0, yOfs = 0},
+	PrimaryLayout = {
 		rowCount = 3,
 		Row1 = {
 			buttonCount = 5,
@@ -128,7 +131,7 @@ KeyboardSettings.G13 = {
 			}
 		}
 	},
-	AbilityMappings = {
+	PrimaryAbilityMappings = {
 		Row1Button1 = 0,
 		Row1Button2 = 0,
 		Row1Button3 = 0,
@@ -143,12 +146,141 @@ KeyboardSettings.G13 = {
 		Row3Button2 = 0,
 		Row3Button3 = 0,
 		Row3Button4 = 0,
+	},
+	SecondaryLayout = {
+		rowCount = 4,
+		TwoRow1 = {
+			buttonCount = 3,
+			Button1 = {
+				point = "TOPLEFT",
+				relativePoint = "TOPRIGHT",
+				relativeTo = "Row1Button5",
+				xOfs = 0,
+				yOfs = 0,
+				frame = "TwoRow1Button1"
+			},
+			Button2 = {
+				point = "TOPLEFT",
+				relativePoint = "TOPRIGHT",
+				relativeTo = "TwoRow1Button1",
+				xOfs = 1,
+				yOfs = 0,
+				frame = "TwoRow1Button2"
+			},
+			Button3 = {
+				point = "TOPLEFT",
+				relativePoint = "TOPRIGHT",
+				relativeTo = "TwoRow1Button2",
+				xOfs = 1,
+				yOfs = 0,
+				frame = "TwoRow1Button3"
+			}
+		},
+		TwoRow2 = {
+			buttonCount = 3,
+			Button1 = {
+				point = "TOPLEFT",
+				relativePoint = "BOTTOMLEFT",
+				relativeTo = "TwoRow1Button1",
+				xOfs = 0,
+				yOfs = -1,
+				frame = "TwoRow2Button1"
+			},
+			Button2 = {
+				point = "TOPLEFT",
+				relativePoint = "TOPRIGHT",
+				relativeTo = "TwoRow2Button1",
+				xOfs = 1,
+				yOfs = 0,
+				frame = "TwoRow2Button2"
+			},
+			Button3 = {
+				point = "TOPLEFT",
+				relativePoint = "TOPRIGHT",
+				relativeTo = "TwoRow2Button2",
+				xOfs = 1,
+				yOfs = 0,
+				frame = "TwoRow2Button3"
+			}
+		},
+		TwoRow3 = {
+			buttonCount = 3,
+			Button1 = {
+				point = "TOPLEFT",
+				relativePoint = "BOTTOMLEFT",
+				relativeTo = "TwoRow2Button1",
+				xOfs = 0,
+				yOfs = -1,
+				frame = "TwoRow3Button1"
+			},
+			Button2 = {
+				point = "TOPLEFT",
+				relativePoint = "TOPRIGHT",
+				relativeTo = "TwoRow3Button1",
+				xOfs = 1,
+				yOfs = 0,
+				frame = "TwoRow3Button2"
+			},
+			Button3 = {
+				point = "TOPLEFT",
+				relativePoint = "TOPRIGHT",
+				relativeTo = "TwoRow3Button2",
+				xOfs = 1,
+				yOfs = 0,
+				frame = "TwoRow3Button3"
+			}
+		},
+		TwoRow4 = {
+			buttonCount = 3,
+			Button1 = {
+				point = "TOPLEFT",
+				relativePoint = "BOTTOMLEFT",
+				relativeTo = "TwoRow3Button1",
+				xOfs = 0,
+				yOfs = -1,
+				frame = "TwoRow4Button1"
+			},
+			Button2 = {
+				point = "TOPLEFT",
+				relativePoint = "TOPRIGHT",
+				relativeTo = "TwoRow4Button1",
+				xOfs = 1,
+				yOfs = 0,
+				frame = "TwoRow4Button2"
+			},
+			Button3 = {
+				point = "TOPLEFT",
+				relativePoint = "TOPRIGHT",
+				relativeTo = "TwoRow4Button2",
+				xOfs = 1,
+				yOfs = 0,
+				frame = "TwoRow4Button3"
+			}
+		}
+	},
+	SecondaryAbilityMappings = {
+		TwoRow1Button1 = 0,
+		TwoRow1Button2 = 0,
+		TwoRow1Button3 = 0,
+		TwoRow2Button1 = 0,
+		TwoRow2Button2 = 0,
+		TwoRow2Button3 = 0,
+		TwoRow3Button1 = 0,
+		TwoRow3Button2 = 0,
+		TwoRow3Button3 = 0,
+		TwoRow4Button1 = 0,
+		TwoRow4Button2 = 0,
+		TwoRow4Button3 = 0,
 	}
 }
 
-function KeyboardSettings:InitializeBtnMapping(abilityList)
+function KeyboardSettings:InitializeBtnMapping(abilityList, abilityList2)
 	self.SpellToButtonMapping = {}
 	for btn, spellId in pairs(abilityList) do
+		self.SpellToButtonMapping[spellId] = btn
+	end
+
+	for btn, spellId in pairs(abilityList2) do
 		self.SpellToButtonMapping[spellId] = btn
 	end
 end

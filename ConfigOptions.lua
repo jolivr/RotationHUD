@@ -16,7 +16,8 @@ ConfigOptions.DamageProcArgs = {}
 ConfigOptions.DefenseProcArgs = {}
 ConfigOptions.CooldownProcArgs = {}
 ConfigOptions.HealingProcArgs = {}
-ConfigOptions.KeyboardLayoutArgs = {}
+ConfigOptions.PrimaryKeyboardLayoutArgs = {}
+ConfigOptions.SecondaryKeyboardLayoutArgs = {}
 ConfigOptions.DamagePriorities = {}
 ConfigOptions.DefensePriorities = {}
 ConfigOptions.CooldownPriorities = {}
@@ -25,7 +26,6 @@ ConfigOptions.InterruptPriorities = {}
 ConfigOptions.MasterPriorityList = {}
 ConfigOptions.RoHUD = {}
 ConfigOptions.Keyboard = {}
-ConfigOptions.ResetProfileFunc = function() end
 
 ConfigOptions.Menu = {
     name = "Gamepad Icons - Windwalker",
@@ -63,11 +63,25 @@ ConfigOptions.Menu = {
                 }
             }
         },
-        layout = {
-            name = "Layout",
+        layouts = {
+            name = "Layouts",
             type = "group",
-            args = ConfigOptions.KeyboardLayoutArgs,
-            order = 2
+            childGroups = "tree",
+            order = 2,
+            args = {
+                primarylayout = {
+                    name = "Primary",
+                    type = "group",
+                    args = ConfigOptions.PrimaryKeyboardLayoutArgs,
+                    order = 1
+                },
+                secondarylayout = {
+                    name = "Secondary",
+                    type = "group",
+                    args = ConfigOptions.SecondaryKeyboardLayoutArgs,
+                    order = 2
+                },
+            }
         },
         reloadUI = {
             name = "Reload UI",
@@ -102,7 +116,10 @@ function ConfigOptions:InitializeMenu()
     self:CreatePrioritySection("Defense", self.DefenseArgs, self.DefensePriorities)
     self:CreatePrioritySection("Cooldown", self.CooldownArgs, self.CooldownPriorities)
     self:CreatePrioritySection("Healing", self.HealingArgs, self.HealingPriorities)
-    self:CreateKeyboardLayoutSection()
+    self:CreateKeyboardLayoutSection(self.Keyboard.PrimaryLayout, self.Keyboard.PrimaryAbilityMappings,
+        self.PrimaryKeyboardLayoutArgs, "Row")
+    self:CreateKeyboardLayoutSection(self.Keyboard.SecondaryLayout, self.Keyboard.SecondaryAbilityMappings,
+        self.SecondaryKeyboardLayoutArgs, "TwoRow")
     self:CompileMasterListOfPriorities()
 end
 
@@ -386,11 +403,58 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
     optionArgs["100"] = addNewPrioritySection
 end
 
-function ConfigOptions:CreateKeyboardLayoutSection()
-    local abilityMappings = self.Keyboard.AbilityMappings
-    for rowIndex = 1, self.Keyboard.Layout.rowCount do
-        local rowName = "Row" .. rowIndex
-        local row = self.Keyboard.Layout[rowName]
+function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPrefix)
+    local abilityMappings = mappings
+    local offsetSection = {
+        name = "Position",
+        type = "group",
+        inline = true,
+        order = 0,
+        args = {
+            xOffsetSection = {
+                name = "X Offset",
+                type = "range",
+                min = -200,
+                max = 200,
+                step = 10,
+                isPercent = false,
+                order = 1,
+                get = function() 
+                    local rowName = tostring(rowPrefix..1)
+                    return layout[rowName].Button1.xOfs 
+                end,
+                set = function(_, val) 
+                    local rowName = tostring(rowPrefix..1)
+                    layout[rowName].Button1.xOfs = val 
+                    KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
+                    KeyboardDisplay:ShowGrid()
+                end
+            },
+            yOffsetSection = {
+                name = "Y Offset",
+                type = "range",
+                min = -200,
+                max = 200,
+                step = 10,
+                isPercent = false,
+                order = 2,
+                get = function()
+                    local rowName = tostring(rowPrefix..1)
+                    return layout[rowName].Button1.yOfs  
+                end,
+                set = function(_, val) 
+                    local rowName = tostring(rowPrefix..1)
+                    layout[rowName].Button1.yOfs = val   
+                    KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
+                    KeyboardDisplay:ShowGrid()
+                end
+            }
+        }
+    }
+    args["position"] = offsetSection
+    for rowIndex = 1, layout.rowCount do
+        local rowName = rowPrefix .. rowIndex
+        local row = layout[rowName]
         local rowSection = {
             name = "",
             type = "group",
@@ -413,7 +477,8 @@ function ConfigOptions:CreateKeyboardLayoutSection()
                 imageWidth = 40,
                 func = function()
                     local functionArgs = { rowName .. btnName }
-                    local modFunc = function() ConfigOptions:ModifyButtonLayout(functionArgs) end
+                    local modFunc = function() ConfigOptions:ModifyButtonLayout(functionArgs, layout, mappings, args,
+                        rowPrefix, offSet) end
                     self:PopulateSpells(modFunc, functionArgs, false)
                 end,
                 order = btnIndex,
@@ -422,7 +487,7 @@ function ConfigOptions:CreateKeyboardLayoutSection()
             btnSections[rowName .. btnName] = btnSection
         end
         rowSection.args = btnSections
-        self.KeyboardLayoutArgs[rowName] = rowSection
+        args[rowName] = rowSection
     end
 end
 
@@ -544,16 +609,16 @@ function ConfigOptions:CreateProcArgSection(procList, abilityType, optionArgs, p
     return procSections
 end
 
-function ConfigOptions:ModifyButtonLayout(priorityArgs)
+function ConfigOptions:ModifyButtonLayout(priorityArgs, layout, mappings, args, rowPrefix, offSet)
     local btnId = priorityArgs[1]
     local spellId = priorityArgs[2]
 
-    self.Keyboard.AbilityMappings[btnId] = spellId
-    KeyboardSettings:InitializeBtnMapping(self.Keyboard.AbilityMappings)
-    
+    mappings[btnId] = spellId
+    KeyboardSettings:InitializeBtnMapping(self.Keyboard.PrimaryAbilityMappings, self.Keyboard.SecondaryAbilityMappings)
+
     ConfigRegistry:NotifyChange("RoHUD");
-    self:CreateKeyboardLayoutSection()
-    KeyboardDisplay:InitializeIconGrid(self.Keyboard)
+    self:CreateKeyboardLayoutSection(layout, mappings, args, rowPrefix, offSet)
+    KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
     spellListFrame:Hide()
 end
 
@@ -603,7 +668,7 @@ function ConfigOptions:PopulateSpells(callbackFunc, callbackArgs, showTalents)
 
     if (spellList) then
         table.sort(spellList, function(a, b) return a.name < b.name end)
-
+        spellList[#spellList + 1] = { name = "None", icon = "Interface\\ICONS\\INV_Misc_QuestionMark", id = 0 }
         for _, spell in pairs(spellList) do
             local addIcon = GUI:Create("Icon")
             addIcon:SetImage(spell.icon)

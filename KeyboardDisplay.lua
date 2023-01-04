@@ -27,16 +27,16 @@ KeyboardDisplay.Colors = {
     Pink = { .3, .7, 1, 1 }
 }
 
-function KeyboardDisplay:InitializeIconGrid(keyboard)
-    for rowIndex = 1, keyboard.Layout.rowCount do
-        local rowName = "Row" .. rowIndex
-        local row = keyboard.Layout[rowName]
-
+function KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
+    for rowIndex = 1, layout.rowCount do
+        local rowName = rowPrefix .. rowIndex --"Row" .. rowIndex
+     
+        local row = layout[rowName]
+   
         for btnIndex = 1, row.buttonCount do
             local btnName = "Button" .. btnIndex
             local btn = row[btnName]
-            local spellId = keyboard.AbilityMappings[rowName .. btnName]
-
+            local spellId = mappings[rowName .. btnName]
             local frame = self:CreateFrame(spellId, btn.point, btn.relativeTo, btn.relativePoint, btn.xOfs, btn.yOfs,
                 btn.frame)
             tinsert(self.Frames, frame)
@@ -66,9 +66,9 @@ function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, 
         btnFrame:SetSize(15, 15)
         btnFrame:SetFrameStrata("MEDIUM")
         btnFrame:SetFrameLevel(52)
-        btnFrame:SetPoint(point, relativeTo, relativePoint, offsetX, offsetY)
-
     end
+
+    btnFrame:SetPoint(point, relativeTo, relativePoint, offsetX, offsetY)
 
     local icon = btnFrame.iconart
     if not icon then
@@ -80,8 +80,8 @@ function KeyboardDisplay:CreateFrame(spellId, point, relativeTo, relativePoint, 
         icon:SetAllPoints(btnFrame)
     end
 
-    if (spellId == nil) then
-        icon:SetColorTexture(0, 0, 0, .3)
+    if (spellId == nil or spellId == 0) then
+        icon:SetColorTexture(0, 0, 0, .6)
     else
         icon:SetTexture(spellTexture)
     end
@@ -135,8 +135,8 @@ function KeyboardDisplay:AttachToNamePlate(healthBarFrame)
         if (not plate:IsVisible()) then
             yOfs = -300
         end
-
-        keyBtn:SetPoint("TOPLEFT", plate, "BOTTOMLEFT", 0, yOfs)
+        
+        keyBtn:SetPoint("TOPLEFT", plate, "BOTTOMLEFT")
         healthBarFrame:ClearAllPoints()
         healthBarFrame:SetPoint("CENTER", plate, "CENTER", 0, -120)
         healthBarFrame:SetAlpha(1)
@@ -147,8 +147,8 @@ function KeyboardDisplay:AttachToNamePlate(healthBarFrame)
     end
 end
 
-function KeyboardDisplay:ShowGrid(healthBarFrame)
-    if (self:AttachToNamePlate(healthBarFrame)) then
+function KeyboardDisplay:ShowGrid()
+    if (self:AttachToNamePlate(self.HealthBarFrame)) then
         for i, btnFrame in pairs(self.Frames) do
             btnFrame:SetAlpha(1)
         end
