@@ -273,32 +273,43 @@ function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor
 
     end
 
-    if (not readyButtons[1]) then
-        KeyboardDisplay:HideAllGlows(frames)
-        return
+    if(frames and glowColor) then
+        if (not readyButtons[1]) then
+            KeyboardDisplay:HideAllGlows(frames)
+            return
+        end
+    
+        local nextInLineButton = readyButtons[1]
+        if (nextInLineButton ~= lastCheckedBtn) then
+            KeyboardDisplay:HideAllGlows(frames)
+            KeyboardDisplay:ShowNextSpellGlow(nextInLineButton, glowColor)
+            readyButton = nextInLineButton
+        else
+            readyButton = lastCheckedBtn
+        end
+    
+        return readyButton
     end
-
-    local nextInLineButton = readyButtons[1]
-    if (nextInLineButton ~= lastCheckedBtn) then
-        KeyboardDisplay:HideAllGlows(frames)
-        KeyboardDisplay:ShowNextSpellGlow(nextInLineButton, glowColor)
-        readyButton = nextInLineButton
-    else
-        readyButton = lastCheckedBtn
-    end
-
-    return readyButton
+   
 end
 
 function Rotation:CheckInterrupt(ability)
-    local _, _, _, _, _, _, _, notInterruptible, _ = UnitCastingInfo("target")
+    local name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible, spellId = UnitCastingInfo("target")
     local btn = KeyboardSettings.SpellToButtonMapping[ability.spellId]
     local ready, inRange, usable, notEnoughPower = self:AbilityReady(ability)
 
     if (ready) then
         self:SetReadyTexture(btn)
         --tinsert(readyButtons, btn)
-        if (not notInterruptible) then
+        if (spellId and not notInterruptible) then
+            if (self.Debug) then
+                if (ability.debug) then
+                    self.DebugText = self.DebugText .. "\r\n" .. name .. " is interruptible! \r\n"
+                    self:ShowDebugWindow()
+                    self.DebugTextBox:SetText(self.DebugText)
+                end
+            end
+
             KeyboardDisplay:ShowGlow(btn, KeyboardDisplay.Colors.Pink)
         else
             KeyboardDisplay:HideGlow(btn)

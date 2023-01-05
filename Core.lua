@@ -17,6 +17,7 @@ RoHUD.defaultOptions = {
         defensePriorities = { check = true, abilities = {} },
         cooldownPriorities = { check = true, abilities = {} },
         healingPriorities = { check = true, abilities = {}},
+        nonPriorityAbilities = { check = true, abilities = {}},
         interruptAbility = { check = true, spellId = 116705},
         minimap = { hide = false },
         keyboard = KeyboardSettings.G13
@@ -51,9 +52,9 @@ function RoHUD:PriorityRotationTimer()
     Rotation.PrevHealingButton = Rotation:CheckAbilities(self.db.profile.healingPriorities, Rotation.PrevHealingButton,
         KeyboardDisplay.HealingFrames, KeyboardDisplay.Colors.Green)
 
-   -- if(self.db.profile.interruptAbility.debug) then
-        Rotation:CheckInterrupt(self.db.profile.interruptAbility)
-   -- end
+    Rotation:CheckAbilities(self.db.profile.nonPriorityAbilities, nil, KeyboardDisplay.NonPriorityFrames, nil)
+   
+    Rotation:CheckInterrupt(self.db.profile.interruptAbility)
 end
 
 function RoHUD:StartRotationTimer()
@@ -92,6 +93,7 @@ function RoHUD:InitializePersistentVariables()
     ConfigOptions.DefensePriorities = self.db.profile.defensePriorities
     ConfigOptions.CooldownPriorities = self.db.profile.cooldownPriorities
     ConfigOptions.HealingPriorities = self.db.profile.healingPriorities
+    ConfigOptions.NonPriorities = self.db.profile.nonPriorityAbilities
     ConfigOptions.InterruptAbility = self.db.profile.interruptAbility
 
     ConfigOptions.Keyboard = self.db.profile.keyboard
@@ -108,7 +110,6 @@ end
 function RoHUD:PLAYER_TARGET_CHANGED()
     self:CancelRotationTimer()
     KeyboardDisplay:HideGrid(healthBarFrame)
-    self:Print("Can attack: ", UnitCanAttack("player", "target"))
     if (UnitCanAttack("player", "target")) then
         C_Timer.After(0.1, function()
            -- print("calling start from TARGET CHANGED")
@@ -146,12 +147,12 @@ function RoHUD:CooldownTimer(spellId)
    -- print("timer for " , spellId, " gcd: ", gcdms)
    -- print("Cooldown: ", cooldownms / 1000, "GCD cooldown: ", gcdms)
     local start, duration, enabled, modRate = GetSpellCooldown(spellId)
-    local timeLeft = ceil(start + duration - GetTime())
+    local timeLeft = start + duration - GetTime()
     if(gcdms > 0) then
         timeLeft = timeLeft - (gcdms / 1000)
     end
     if(timeLeft > 0) then
-        KeyboardDisplay:ShowCooldown(spellId, timeLeft)
+        KeyboardDisplay:ShowCooldown(spellId, ceil(timeLeft))
     else
         KeyboardDisplay:HideCooldown(spellId)
         self:CancelTimer(cdTimers[spellId])

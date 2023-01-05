@@ -16,12 +16,14 @@ ConfigOptions.DamageProcArgs = {}
 ConfigOptions.DefenseProcArgs = {}
 ConfigOptions.CooldownProcArgs = {}
 ConfigOptions.HealingProcArgs = {}
+ConfigOptions.NonPriorityArgs = {}
 ConfigOptions.InterruptArgs = {}
 ConfigOptions.PrimaryKeyboardLayoutArgs = {}
 ConfigOptions.SecondaryKeyboardLayoutArgs = {}
 ConfigOptions.DamagePriorities = {}
 ConfigOptions.DefensePriorities = {}
 ConfigOptions.CooldownPriorities = {}
+ConfigOptions.NonPriorities = {}
 ConfigOptions.HealingPriorities = {}
 ConfigOptions.MasterPriorityList = {}
 ConfigOptions.InterruptAbility = {}
@@ -62,6 +64,12 @@ ConfigOptions.Menu = {
                     args = ConfigOptions.HealingArgs,
                     order = 4
                 },
+                nonpriority = {
+                    name = "Non-Priority",
+                    type = "group",
+                    args = ConfigOptions.NonPriorityArgs,
+                    order = 4
+                },
                 interrupt = {
                     name = "Interrupt",
                     type = "group",
@@ -95,11 +103,6 @@ ConfigOptions.Menu = {
             type = "execute",
             func = function() ReloadUI() end,
             order = 1000
-        },
-        resetProfile = {
-            name = "Reset Profile",
-            type = "execute",
-            func = ConfigOptions.ResetProfileFunc
         }
     },
 }
@@ -123,6 +126,7 @@ function ConfigOptions:InitializeMenu()
     self:CreatePrioritySection("Defense", self.DefenseArgs, self.DefensePriorities)
     self:CreatePrioritySection("Cooldown", self.CooldownArgs, self.CooldownPriorities)
     self:CreatePrioritySection("Healing", self.HealingArgs, self.HealingPriorities)
+    self:CreatePrioritySection("Non-Priority", self.NonPriorityArgs, self.NonPriorities)
     self:CreateInterruptSection("Interrupt", self.InterruptArgs, self.InterruptAbility)
 
     self:CreateKeyboardLayoutSection(self.Keyboard.PrimaryLayout, self.Keyboard.PrimaryAbilityMappings,
