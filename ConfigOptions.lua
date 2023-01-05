@@ -16,14 +16,15 @@ ConfigOptions.DamageProcArgs = {}
 ConfigOptions.DefenseProcArgs = {}
 ConfigOptions.CooldownProcArgs = {}
 ConfigOptions.HealingProcArgs = {}
+ConfigOptions.InterruptArgs = {}
 ConfigOptions.PrimaryKeyboardLayoutArgs = {}
 ConfigOptions.SecondaryKeyboardLayoutArgs = {}
 ConfigOptions.DamagePriorities = {}
 ConfigOptions.DefensePriorities = {}
 ConfigOptions.CooldownPriorities = {}
 ConfigOptions.HealingPriorities = {}
-ConfigOptions.InterruptPriorities = {}
 ConfigOptions.MasterPriorityList = {}
+ConfigOptions.InterruptAbility = {}
 ConfigOptions.RoHUD = {}
 ConfigOptions.Keyboard = {}
 
@@ -59,6 +60,12 @@ ConfigOptions.Menu = {
                     name = "Healing",
                     type = "group",
                     args = ConfigOptions.HealingArgs,
+                    order = 4
+                },
+                interrupt = {
+                    name = "Interrupt",
+                    type = "group",
+                    args = ConfigOptions.InterruptArgs,
                     order = 4
                 }
             }
@@ -116,6 +123,8 @@ function ConfigOptions:InitializeMenu()
     self:CreatePrioritySection("Defense", self.DefenseArgs, self.DefensePriorities)
     self:CreatePrioritySection("Cooldown", self.CooldownArgs, self.CooldownPriorities)
     self:CreatePrioritySection("Healing", self.HealingArgs, self.HealingPriorities)
+    self:CreateInterruptSection("Interrupt", self.InterruptArgs, self.InterruptAbility)
+
     self:CreateKeyboardLayoutSection(self.Keyboard.PrimaryLayout, self.Keyboard.PrimaryAbilityMappings,
         self.PrimaryKeyboardLayoutArgs, "Row")
     self:CreateKeyboardLayoutSection(self.Keyboard.SecondaryLayout, self.Keyboard.SecondaryAbilityMappings,
@@ -212,6 +221,13 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
                     order = 5,
                     get = function() return priority.showConditions end,
                     set = function(_, val) priority.showConditions = val end
+                },
+                debugAbility = {
+                    name = "debug",
+                    type = "toggle",
+                    order = 5,
+                    get = function() return priority.debug end,
+                    set = function(_, val) priority.debug = val end
                 },
                 conditionsSection = {
                     name = "conditions",
@@ -403,6 +419,92 @@ function ConfigOptions:CreatePrioritySection(abilityType, optionArgs, priorityLi
     optionArgs["100"] = addNewPrioritySection
 end
 
+function ConfigOptions:CreateInterruptSection(abilityType, optionArgs, ability)
+    for i, _ in pairs(optionArgs) do
+        optionArgs[i] = nil
+    end
+
+    if (ability) then
+        local checkSection = {
+            name = "check " .. abilityType,
+            type = "toggle",
+            order = 1,
+            width = .6,
+            get = function() return ability.check end,
+            set = function(_, val) ability.check = val end
+        }
+    
+        optionArgs["0"] = checkSection
+
+        local spellName = GetSpellInfo(ability.spellId)
+        local interruptSection = {
+            type = "group",
+            inline = true,
+            name = "Interrupt Ability",
+            order = 2,
+            width = .7,
+            disabled = function() return not ability.check end,
+            args = {
+                icon = {
+                    name = spellName,
+                    type = "execute",
+                    image = GetSpellTexture(ability.spellId),
+                    imageHeight = 40,
+                    imageWidth = 40,
+                    func = function() end,
+                    order = 1,
+                    width = .75
+                },
+                delete = {
+                    name = "delete",
+                    type = "execute",
+                    confirm = function() return "Delete this ability?" end,
+                    func = function()
+                        self:DeleteInterrupt(abilityType, optionArgs, ability)
+                    end,
+                    order = 2,
+                    width = .4
+                },
+                debugAbility = {
+                    name = "debug",
+                    type = "toggle",
+                    order = 3,
+                    get = function() return ability.debug end,
+                    set = function(_, val) ability.debug = val end
+                }
+            }
+        }
+
+        optionArgs["1"] = interruptSection
+    end
+
+    local addInterruptSection = {
+        type = "group",
+        inline = true,
+        name = "Add Spell",
+        width = .7,
+        order = 3,
+        args = {
+            abilitybtn1 = {
+                name = "",
+                type = "execute",
+                image = "Interface\\ICONS\\INV_Misc_QuestionMark",
+                imageHeight = 40,
+                imageWidth = 40,
+                func = function()
+                    local functionArgs = {}
+                    local addFunc = function() ConfigOptions:AddInterrupt(functionArgs) end
+                    self:PopulateSpells(addFunc, functionArgs, false)
+                end,
+                order = 1,
+                width = .75
+            }
+        }
+    }
+
+    optionArgs["2"] = addInterruptSection
+end
+
 function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPrefix)
     local abilityMappings = mappings
     local offsetSection = {
@@ -419,13 +521,13 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
                 step = 5,
                 isPercent = false,
                 order = 1,
-                get = function() 
-                    local rowName = tostring(rowPrefix..1)
-                    return layout[rowName].Button1.xOfs 
+                get = function()
+                    local rowName = tostring(rowPrefix .. 1)
+                    return layout[rowName].Button1.xOfs
                 end,
-                set = function(_, val) 
-                    local rowName = tostring(rowPrefix..1)
-                    layout[rowName].Button1.xOfs = val 
+                set = function(_, val)
+                    local rowName = tostring(rowPrefix .. 1)
+                    layout[rowName].Button1.xOfs = val
                     KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
                     KeyboardDisplay:ShowGrid()
                 end
@@ -439,12 +541,12 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
                 isPercent = false,
                 order = 2,
                 get = function()
-                    local rowName = tostring(rowPrefix..1)
-                    return layout[rowName].Button1.yOfs  
+                    local rowName = tostring(rowPrefix .. 1)
+                    return layout[rowName].Button1.yOfs
                 end,
-                set = function(_, val) 
-                    local rowName = tostring(rowPrefix..1)
-                    layout[rowName].Button1.yOfs = val   
+                set = function(_, val)
+                    local rowName = tostring(rowPrefix .. 1)
+                    layout[rowName].Button1.yOfs = val
                     KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
                     KeyboardDisplay:ShowGrid()
                 end
@@ -453,7 +555,7 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
     }
     args["position"] = offsetSection
 
-    if(rowPrefix == "Row") then --Primary layout
+    if (rowPrefix == "Row") then --Primary layout
         local healthbarOffsetSection = {
             name = "Healthbar Position",
             type = "group",
@@ -468,11 +570,11 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
                     step = 5,
                     isPercent = false,
                     order = 1,
-                    get = function() 
-                        return self.Keyboard["Healthbar"].xOfs 
+                    get = function()
+                        return self.Keyboard["Healthbar"].xOfs
                     end,
-                    set = function(_, val) 
-                        self.Keyboard["Healthbar"].xOfs = val 
+                    set = function(_, val)
+                        self.Keyboard["Healthbar"].xOfs = val
                         KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
                         KeyboardDisplay:ShowGrid()
                     end
@@ -486,10 +588,10 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
                     isPercent = false,
                     order = 2,
                     get = function()
-                        return self.Keyboard["Healthbar"].yOfs  
+                        return self.Keyboard["Healthbar"].yOfs
                     end,
-                    set = function(_, val) 
-                        self.Keyboard["Healthbar"].yOfs = val   
+                    set = function(_, val)
+                        self.Keyboard["Healthbar"].yOfs = val
                         KeyboardDisplay:InitializeIconGrid(layout, mappings, rowPrefix)
                         KeyboardDisplay:ShowGrid()
                     end
@@ -497,7 +599,7 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
             }
         }
         args["hbposition"] = healthbarOffsetSection
-    end 
+    end
 
     for rowIndex = 1, layout.rowCount do
         local rowName = rowPrefix .. rowIndex
@@ -525,7 +627,8 @@ function ConfigOptions:CreateKeyboardLayoutSection(layout, mappings, args, rowPr
                 func = function()
                     local functionArgs = { rowName .. btnName }
                     local modFunc = function() ConfigOptions:ModifyButtonLayout(functionArgs, layout, mappings, args,
-                        rowPrefix, offSet) end
+                            rowPrefix, offSet)
+                    end
                     self:PopulateSpells(modFunc, functionArgs, false)
                 end,
                 order = btnIndex,
@@ -566,6 +669,18 @@ function ConfigOptions:AddPriority(priorityArgs)
 
     ConfigRegistry:NotifyChange("RoHUD"); -- necessary for options to refresh
     self:CreatePrioritySection(abilityType, optionArgs, priorityList)
+    spellListFrame:Hide()
+end
+
+function ConfigOptions:AddInterrupt(priorityArgs)
+    local spellId = priorityArgs[1]
+    if not spellId then return end
+    local newAbility = Abilities:CreateSpell(spellId)
+
+    self.InterruptAbility = newAbility
+
+    ConfigRegistry:NotifyChange("RoHUD"); -- necessary for options to refresh
+    self:CreateInterruptSection(newAbility)
     spellListFrame:Hide()
 end
 
@@ -796,6 +911,12 @@ function ConfigOptions:DeleteAbilityPriority(index, type, args, priorityList)
     end
 
     self:CreatePrioritySection(type, args, priorityList)
+end
+
+function ConfigOptions:DeleteInterrupt(abilityType, optionArgs, ability)
+    self.InterruptAbility = {}
+
+    self:CreateInterruptSection(abilityType, optionArgs, nil)
 end
 
 function ConfigOptions:DeleteProc(index, procList, type, args, priorityList)

@@ -17,7 +17,7 @@ RoHUD.defaultOptions = {
         defensePriorities = { check = true, abilities = {} },
         cooldownPriorities = { check = true, abilities = {} },
         healingPriorities = { check = true, abilities = {}},
-        interruptAbility = {spellId = 116705},
+        interruptAbility = { check = true, spellId = 116705},
         minimap = { hide = false },
         keyboard = KeyboardSettings.G13
     }
@@ -50,10 +50,15 @@ function RoHUD:PriorityRotationTimer()
 
     Rotation.PrevHealingButton = Rotation:CheckAbilities(self.db.profile.healingPriorities, Rotation.PrevHealingButton,
         KeyboardDisplay.HealingFrames, KeyboardDisplay.Colors.Green)
+
+   -- if(self.db.profile.interruptAbility.debug) then
+        Rotation:CheckInterrupt(self.db.profile.interruptAbility)
+   -- end
 end
 
 function RoHUD:StartRotationTimer()
     --print("Starting timers")
+    Rotation.Debug = true
     rotationTimer = self:ScheduleRepeatingTimer("PriorityRotationTimer", .25)
 end
 
@@ -87,8 +92,7 @@ function RoHUD:InitializePersistentVariables()
     ConfigOptions.DefensePriorities = self.db.profile.defensePriorities
     ConfigOptions.CooldownPriorities = self.db.profile.cooldownPriorities
     ConfigOptions.HealingPriorities = self.db.profile.healingPriorities
-
-   -- ConfigOptions.InterruptPriorities = self.db.profile.interruptPriorities
+    ConfigOptions.InterruptAbility = self.db.profile.interruptAbility
 
     ConfigOptions.Keyboard = self.db.profile.keyboard
     KeyboardDisplay.Keyboard = self.db.profile.keyboard
@@ -102,22 +106,21 @@ function RoHUD:PLAYER_ENTERING_WORLD(_, _, _)
 end
 
 function RoHUD:PLAYER_TARGET_CHANGED()
+    self:CancelRotationTimer()
+    KeyboardDisplay:HideGrid(healthBarFrame)
+    self:Print("Can attack: ", UnitCanAttack("player", "target"))
     if (UnitCanAttack("player", "target")) then
         C_Timer.After(0.1, function()
            -- print("calling start from TARGET CHANGED")
             self:StartRotationTimer()
             KeyboardDisplay:ShowGrid(healthBarFrame)
         end)
-    else
-       -- print("calling stop from TARGET CHANGED")
-        self:CancelRotationTimer()
-        KeyboardDisplay:HideGrid(healthBarFrame)
     end
 end
 
 function RoHUD:UNIT_SPELLCAST_START(_, unitTarget, _, _)
     if (unitTarget == "target") then
-        Rotation:CheckInterrupt()
+       -- Rotation:CheckInterrupt()
     end
 end
 

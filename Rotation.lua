@@ -2,6 +2,7 @@ local RotationHUD, Rotation = ...
 local RotationHUD, KeyboardSettings = ...
 local RotationHUD, KeyboardDisplay = ...
 local RotationHUD, Abilities = ...
+local GUI = LibStub("AceGUI-3.0")
 
 Rotation.PrevDamageButton = {}
 Rotation.PrevDefenseButton = {}
@@ -10,7 +11,10 @@ Rotation.PrevHealingButton = {}
 Rotation.PrevInterruptButton = {}
 Rotation.LastClickedSpellId = 0
 Rotation.InterruptAbility = {}
-
+Rotation.DebugText = ""
+Rotation.Debug = true
+Rotation.DebugWindowCreated = false
+Rotation.DebugTextBox = {}
 Rotation.EnergyList = {
     [0] = 'Mana',
     [1] = 'Rage',
@@ -77,7 +81,7 @@ function Rotation:GetCooldown(spellid, timeShift)
     end
 end
 
-function Rotation:AbilityReady(ability, printDebug)
+function Rotation:AbilityReady(ability)
     local ready = false
     local spellId = ability.spellId
     local known = IsPlayerSpell(spellId)
@@ -100,54 +104,32 @@ function Rotation:AbilityReady(ability, printDebug)
     -- if (self.LastClickedSpellId == spellId) then
     --     justClicked = true
     -- end
-    if (printDebug) then
-        print("")
-        print("---")
-        print("Debug for ", spellName)
-    end
-    if (cd > 0) then
-        if (printDebug) then
-            print("On cooldown")
-        end
 
+    if (cd > 0) then
         onCooldown = true
     end
-
 
     if (ability.checkHealthLevel) then
         local health = UnitHealth("player")
         local healthMax = UnitHealthMax("player")
-        local healthCheck = self:ConditionalCheck(health, healthMax, ability.healthLevel, ability.healthOp, true,
-            printDebug)
+        local healthCheck = self:ConditionalCheck(health, healthMax, ability.healthLevel, ability.healthOp, true)
         if (not healthCheck) then
             healthGood = false
-            if (printDebug) then
-                print("Failed health check")
-            end
         end
     end
 
     if (ability.checkEnergyLevel) then
-        local energyCheck = self:ConditionalCheck(energy, energyMax, ability.energyLevel, ability.energyOp, true,
-            printDebug)
+        local energyCheck = self:ConditionalCheck(energy, energyMax, ability.energyLevel, ability.energyOp, true)
         if (not energyCheck) then
             energyGood = false
-            if (printDebug) then
-                print("energy ", energy, ",energyMax ", energyMax, ",energyLevel ", ability.energyLevel, ",energyOp ",
-                    ability.energyOp)
-                print("Failed energy check")
-            end
         end
     end
 
     if (ability.checkChiLevel) then
-        local chiCheck = self:ConditionalCheck(chi, chiMax, ability.chiLevel, ability.chiOp, false, printDebug)
+        local chiCheck = self:ConditionalCheck(chi, chiMax, ability.chiLevel, ability.chiOp, false)
 
         if (not chiCheck) then
             chiGood = false
-            if (printDebug) then
-                print("Failed chi check")
-            end
         end
     end
 
@@ -164,16 +146,11 @@ function Rotation:AbilityReady(ability, printDebug)
         for i, proc in pairs(ability.procList) do
             if (not buffs[proc.name]) then
                 procCheckPassed = false
-                if (printDebug) then
-                    print("Failed proc check")
-                end
             else
                 if (proc.checkStacks and buffs[proc.name].stacks < proc.procStacks) then
                     procCheckPassed = false
                 else
-                    if (printDebug) then
-                        print(proc.name, " triggered!")
-                    end
+                    --print(proc.name, " triggered!")
                 end
             end
         end
@@ -197,11 +174,8 @@ function Rotation:AbilityReady(ability, printDebug)
     if (inRange == 1) then
         inRange = true
     end
-
-    if (not inRange) then
-        if (printDebug) then
-            print("Failed range check")
-        end
+    if (inRange == nil) then
+        inRange = false
     end
 
     if (
@@ -212,7 +186,27 @@ function Rotation:AbilityReady(ability, printDebug)
         ready = true
     end
 
-    return ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healthGood, procCheckPassed
+    if (self.Debug) then
+        if (ability.debug) then
+            Rotation.DebugText = ""
+            self.DebugText = "Debug for " .. spellName .. "\r\n"
+            self.DebugText = self.DebugText .. date('%r') .. "\r\n"
+            self:AddDebug("Ready", ready, true)
+            self:AddDebug("Useable", usable, true)
+            self:AddDebug("Not Enough Power", notEnoughPower, false)
+            self:AddDebug("On Cooldown", onCooldown, false)
+            self:AddDebug("Energy Good", energyGood, true)
+            self:AddDebug("Chi Good", chiGood, true)
+            self:AddDebug("In Range", inRange, true)
+            self:AddDebug("Health Good", healthGood, true)
+            self:AddDebug("Proc Check", procCheckPassed, true)
+            self:ShowDebugWindow()
+            self.DebugTextBox:SetText(self.DebugText)
+        end
+    end
+
+
+    return ready, inRange, usable, notEnoughPower, energyGood, chiGood, onCooldown, healthGood, procCheckPassed
 end
 
 function Rotation:ConditionalCheck(playerLevel, playerMaxLevel, targetLevel, targetOp, isPercentage, printDebug)
@@ -265,27 +259,14 @@ function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor
     for _, ability in pairs(priorityList.abilities) do
         if (ability) then
             local btn = KeyboardSettings.SpellToButtonMapping[ability.spellId]
-            local printDebug = false
             if (btn) then
-                -- if(ability.spellId == 322101) then
-                --   printDebug = true
-                -- end
-
-                local ready, inRange, notEnoughPower, energyGood, chiGood, onCooldown, healthGood, procCheckPassed = self
-                    :AbilityReady(ability, printDebug)
+                local ready, inRange, usable, notEnoughPower = self:AbilityReady(ability)
 
                 if (ready) then
-                    KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Clear)
-                    KeyboardDisplay:Saturate(btn)
+                    self:SetReadyTexture(btn)
                     tinsert(readyButtons, btn)
                 else
-                    KeyboardDisplay:Desaturate(btn)
-                    if (not inRange) then
-                        KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Red)
-                    else
-                        KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Clear)
-                    end
-
+                    self:SetNotReadyTexture(btn, inRange, usable, notEnoughPower)
                 end
             end
         end
@@ -309,15 +290,39 @@ function Rotation:CheckAbilities(priorityList, lastCheckedBtn, frames, glowColor
     return readyButton
 end
 
-function Rotation:CheckInterrupt()
-    local name, _, _, _, _, _, _, notInterruptible, _ = UnitCastingInfo("target")
-    local btnFrame = KeyboardSettings.SpellToButtonMapping[self.InterruptAbility.spellId]
+function Rotation:CheckInterrupt(ability)
+    local _, _, _, _, _, _, _, notInterruptible, _ = UnitCastingInfo("target")
+    local btn = KeyboardSettings.SpellToButtonMapping[ability.spellId]
+    local ready, inRange, usable, notEnoughPower = self:AbilityReady(ability)
 
-    if (not notInterruptible and self:AbilityReady(self.InterruptAbility)) then
-        KeyboardDisplay:ShowGlow(btnFrame, KeyboardDisplay.Colors.Pink)
+    if (ready) then
+        self:SetReadyTexture(btn)
+        --tinsert(readyButtons, btn)
+        if (not notInterruptible) then
+            KeyboardDisplay:ShowGlow(btn, KeyboardDisplay.Colors.Pink)
+        else
+            KeyboardDisplay:HideGlow(btn)
+        end
     else
-        KeyboardDisplay:HideGlow(btnFrame)
+        KeyboardDisplay:HideGlow(btn)
+        self:SetNotReadyTexture(btn, inRange, usable, notEnoughPower)
     end
+end
+
+function Rotation:SetNotReadyTexture(btn, inRange, usable, notEnoughPower)
+    if (not inRange) then
+        KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Red)
+    elseif (not usable or notEnoughPower) then
+        KeyboardDisplay:Desaturate(btn)
+    else
+        KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Clear)
+    end
+
+end
+
+function Rotation:SetReadyTexture(btn)
+    KeyboardDisplay:SetColor(btn, KeyboardDisplay.Colors.Clear)
+    KeyboardDisplay:Saturate(btn)
 end
 
 function Rotation:ClearPreviousButtons()
@@ -325,4 +330,59 @@ function Rotation:ClearPreviousButtons()
     Rotation.PrevDefenseButton = {}
     Rotation.PrevCooldownButton = {}
     Rotation.PrevHealingButton = {}
+end
+
+function Rotation:ShowDebugWindow()
+    self.Debug = true
+    if (not self.DebugWindowCreated) then
+        print("creating window")
+        local mainWindow = GUI:Create("Frame")
+        DebugWindow = mainWindow
+        mainWindow:SetTitle("Debug Window")
+        mainWindow:SetWidth(400)
+        mainWindow:SetPoint("LEFT", 600, 100)
+        mainWindow:SetCallback("OnClose", function(widget)
+            self.DebugWindowCreated = false
+            self.Debug = false
+            GUI:Release(widget)
+        end)
+
+        --Stop Debug Button
+        local btnStop = GUI:Create("Button")
+        btnStop:SetText("Stop")
+        btnStop:SetWidth(100)
+        btnStop:SetCallback("OnClick", function() self.Debug = false end)
+        mainWindow:AddChild(btnStop)
+
+        --Start Debug Button
+        local btnStart = GUI:Create("Button")
+        btnStart:SetText("Start")
+        btnStart:SetWidth(100)
+        btnStart:SetCallback("OnClick", function() self.Debug = true end)
+        mainWindow:AddChild(btnStart)
+
+        --Textbox
+        local txtBox = GUI:Create("MultiLineEditBox")
+        txtBox:SetNumLines(20)
+        txtBox:SetFullWidth(true)
+        txtBox:DisableButton(true)
+        mainWindow:AddChild(txtBox)
+        self.DebugTextBox = txtBox
+        self.DebugWindowCreated = true
+
+    end
+
+end
+
+function Rotation:AddDebug(name, value, validCondition)
+    self.DebugText = self.DebugText .. name .. ": " .. self:SetTextColor(value, validCondition) .. "\r\n"
+end
+
+function Rotation:SetTextColor(value, validCondition)
+    --\124cFF00FF00See existing conditions\124r
+    if (value ~= validCondition) then
+        return "  \124cFFFF0000" .. tostring(value) .. "\124r" -- Red
+    else
+        return "  \124cFF00FF00" .. tostring(value) .. "\124r" -- Green
+    end
 end
